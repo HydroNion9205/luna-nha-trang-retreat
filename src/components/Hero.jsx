@@ -12,7 +12,7 @@ const HeroBackground = () => (
       playsInline
       className="w-full h-screen object-cover absolute top-0 left-0 -z-10"
     >
-      <source src="/public/hero-sea.mp4" type="video/mp4" />
+      <source src="/videos/hero-sea.mp4" type="video/mp4" />
       Trình duyệt của bạn không hỗ trợ thẻ video.
     </video>
 
