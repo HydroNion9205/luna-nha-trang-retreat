@@ -33,7 +33,7 @@ export default function Dining() {
             {/* Main dining visual */}
             <div className="relative rounded-3xl overflow-hidden h-[500px] shadow-2xl group">
               <img
-                src="/public/La_Mer.jpg"
+                src="/images/La_Mer.jpg"
                 alt="Nhà Hàng La Mer"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
@@ -58,7 +58,7 @@ export default function Dining() {
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div className="h-32 rounded-2xl overflow-hidden relative group">
                 <img
-                  src="/public/Wine_Cellar.jpg"
+                  src="/images/Wine_Cellar.jpg"
                   alt="Wine Cellar"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
@@ -67,7 +67,7 @@ export default function Dining() {
               </div>
               <div className="h-32 rounded-2xl overflow-hidden relative group">
                 <img
-                  src="/public/HaiSan.jpg"
+                  src="/images/HaiSan.jpg"
                   alt="Hải Sản Tươi"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />

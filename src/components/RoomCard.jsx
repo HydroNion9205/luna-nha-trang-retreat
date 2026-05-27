@@ -22,7 +22,7 @@ const rooms = [
     badge: 'Signature',
     badgeColor: 'bg-luxury-gold text-white',
     highlights: ['Ban công riêng 30m²', 'Bồn tắm hướng biển', 'Phòng khách riêng', 'Butler cá nhân'],
-    image: '/public/Angelina_Suite.jpg',
+    image: '/images/Angelina_Suite.jpg',
   },
   {
     id: 'grand-deluxe',
@@ -37,7 +37,7 @@ const rooms = [
     badge: 'Phổ biến nhất',
     badgeColor: 'bg-ocean-700 text-white',
     highlights: ['Giường King 2m × 2m', 'Phòng tắm đá cẩm thạch', 'Bàn làm việc cao cấp', 'Sân thượng riêng'],
-    image: '/public/Grand_De_Luxe.jpg',
+    image: '/images/Grand_De_Luxe.jpg',
   },
   {
     id: 'romantic-hideaway',
@@ -52,7 +52,7 @@ const rooms = [
     badge: 'Dành cho cặp đôi',
     badgeColor: 'bg-rose-500 text-white',
     highlights: ['Giường Canopy', 'Hồ bơi nước muối riêng', 'Gói hoa hồng & rượu', 'Tầm nhìn hoàng hôn'],
-    image: '/public/Romantic_Hideaway.jpg',
+    image: '/images/Romantic_Hideaway.jpg',
   },
 ]
 

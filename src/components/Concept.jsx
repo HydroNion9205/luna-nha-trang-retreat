@@ -87,7 +87,7 @@ export default function Concept() {
                 <div className="relative rounded-2xl overflow-hidden h-56 sm:h-72 bg-gradient-to-br from-ocean-800 to-ocean-900 group hover-scale">
                   {/* Ocean view local image */}
                   <img
-                    src="/public/TamNhinVinh.jpg"
+                    src="/images/TamNhinVinh.jpg"
                     alt="Tầm nhìn Vịnh Biển"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
@@ -128,7 +128,7 @@ export default function Concept() {
                 <div className="relative rounded-2xl overflow-hidden h-64 sm:h-72 bg-gradient-to-br from-gray-900 to-ocean-950 group hover-scale">
                   {/* Sunset local image */}
                   <img
-                    src="/public/HoangHon.jpg"
+                    src="/images/HoangHon.jpg"
                     alt="Hoàng hôn tại Luna Retreat"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
