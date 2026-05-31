@@ -146,7 +146,7 @@ export default function Concept() {
               <p className="font-serif text-lg text-ocean-800 italic font-light leading-relaxed">
                 "Nơi đây không chỉ là một khách sạn — đây là nơi để tâm hồn bạn được nghỉ ngơi."
               </p>
-              <p className="text-[10px] tracking-widest uppercase text-ocean-400 mt-3">— Thành Nguyễn, Founder</p>
+              <p className="text-[10px] tracking-widest uppercase text-ocean-400 mt-3">— Nhân Đinh, Founder</p>
             </div>
           </div>
         </div>
