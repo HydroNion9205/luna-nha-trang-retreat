@@ -198,7 +198,7 @@ function RoomResultCard({ room, searchParams, nights, onBook }) {
 }
 
 // ─── Booking Management ────────────────────────────────────────────────────────
-function BookingManagement() {
+export function BookingManagement () {
   const { bookings, cancelBooking } = useBooking()
   const [activeTab, setActiveTab] = useState('active') // 'active' | 'history'
   const [cancelConfirm, setCancelConfirm] = useState(null)
