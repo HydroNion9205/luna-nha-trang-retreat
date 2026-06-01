@@ -68,7 +68,7 @@ export default function Footer() {
                   </div>
                   <div>
                     <p className="text-white font-medium text-sm">Cảm ơn bạn đã đăng ký!</p>
-                    <p className="text-white/50 text-xs mt-0.5">Chúng tôi sẽ gửi ưu đãi đặc biệt đến {email}</p>
+                   <p className="text-white/50 text-xs mt-0.5">Chúng tôi đã gửi mã ưu đãi đặc biệt đến email của bạn.</p>
                   </div>
                 </div>
               ) : (
