@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Menu, X, Phone, Calendar } from 'lucide-react'
 import { useBooking } from '../context/BookingContext'
+import { useState, useEffect } from 'react'
+import { Menu, X, Phone, ChevronDown, Calendar } from 'lucide-react' // Thêm icon Calendar ở đây nếu thích
+import { useBooking } from '../context/BookingContext' // ◄ THÊM DÒNG NÀY
+import { BookingManagement } from './SearchResults'    // ◄ THÊM DÒNG NÀY
 import { BookingManagement } from './SearchResults' // Import trực tiếp component quản lý từ SearchResults
 
 const navLinks = [
@@ -11,8 +15,14 @@ const navLinks = [
 ]
 
 export default function Header() {
+ 
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [activeLink, setActiveLink] = useState(null)
+
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const { bookings, view, navigateHome } = useBooking()
+  const activeBookingsCount = bookings.filter(b => b.status === 'active').length
   
   // ─── THÊM: State để quản lý việc hiển thị Modal Lịch sử đặt phòng ───
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -212,6 +222,24 @@ export default function Header() {
             
             <div className="pt-2">
               {/* Tái sử dụng trọn vẹn UI quản lý và logic hủy phòng đã có ở SearchResults */}
+              <BookingManagement />
+            </div>
+          </div>
+        </div>
+      )}
+      {historyOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm"
+          onClick={() => setHistoryOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-sand-100 relative max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button onClick={() => setHistoryOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
+              <X size={18} />
+            </button>
+            <div className="pt-2">
               <BookingManagement />
             </div>
           </div>
