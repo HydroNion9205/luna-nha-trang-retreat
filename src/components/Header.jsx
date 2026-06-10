@@ -2,10 +2,15 @@ import { useState, useEffect } from 'react'
 import { Menu, X, Phone, Calendar } from 'lucide-react'
 import { useBooking } from '../context/BookingContext'
 import { useState, useEffect } from 'react'
-import { Menu, X, Phone, ChevronDown, Calendar } from 'lucide-react' // Thêm icon Calendar ở đây nếu thích
-import { useBooking } from '../context/BookingContext' // ◄ THÊM DÒNG NÀY
-import { BookingManagement } from './SearchResults'    // ◄ THÊM DÒNG NÀY
-import { BookingManagement } from './SearchResults' // Import trực tiếp component quản lý từ SearchResults
+import { Menu, X, Phone, ChevronDown, Calendar } from 'lucide-react' 
+import { useBooking } from '../context/BookingContext' 
+import { BookingManagement } from './SearchResults'    
+import { BookingManagement } from './SearchResults' 
+import { useState, useEffect } from 'react'
+import { Menu, X, Phone, Calendar } from 'lucide-react'
+import { useBooking } from '../context/BookingContext'
+import { BookingManagement } from './SearchResults'
+import LoginModal from './LoginModal' 
 
 const navLinks = [
   { label: 'Phòng & Suite', href: '#rooms' },
@@ -19,7 +24,7 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeLink, setActiveLink] = useState(null)
-
+  const [loginOpen, setLoginOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const { bookings, view, navigateHome } = useBooking()
   const activeBookingsCount = bookings.filter(b => b.status === 'active').length
@@ -87,8 +92,17 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* Right Actions (Hotline, Lịch sử, Đặt phòng) */}
+      
         <div className="hidden md:flex items-center gap-6">
+          <button
+    onClick={() => setLoginOpen(true)}
+    className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
+      isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
+    }`}
+  >
+    Đăng Nhập
+  </button>
+  
           <a
             href="tel:+84368789135"
             className={`flex items-center gap-2 text-xs tracking-wider transition-colors ${
@@ -99,7 +113,7 @@ export default function Header() {
             +84 368 789 135
           </a>
 
-          {/* ─── THÊM: Nút kích hoạt lịch sử đặt phòng (Desktop) ─── */}
+     
           <button
             onClick={() => setHistoryOpen(true)}
             className={`relative flex items-center gap-1.5 text-xs tracking-widest uppercase transition-colors font-medium cursor-pointer ${
@@ -129,7 +143,7 @@ export default function Header() {
 
         {/* Hamburger Menu (Mobile/Tablet Toggle) */}
         <div className="flex items-center gap-4 md:hidden">
-          {/* ─── THÊM: Nút lịch sử rút gọn trên Mobile (Kế bên menu chính) ─── */}
+        
           <button
             onClick={() => setHistoryOpen(true)}
             className={`relative p-2 cursor-pointer ${
@@ -164,6 +178,12 @@ export default function Header() {
         }`}
       >
         <div className="bg-white/98 backdrop-blur-lg px-6 py-6 space-y-4">
+          <button
+      onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
+      className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
+    >
+      Đăng Nhập / Đăng Ký
+    </button>
           {navLinks.map((link) => (
             <button
               key={link.href}
@@ -245,6 +265,7 @@ export default function Header() {
           </div>
         </div>
       )}
+      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
     </header>
   )
 }
