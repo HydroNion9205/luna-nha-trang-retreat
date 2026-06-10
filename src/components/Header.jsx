@@ -15,9 +15,8 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
-  const [historyOpen, setHistoryOpen] = useState(false) // Giữ lại 1 định nghĩa duy nhất
+  const [historyOpen, setHistoryOpen] = useState(false)
 
-  // Lấy dữ liệu từ Context (Giữ lại 1 định nghĩa duy nhất)
   const { bookings, view, navigateHome } = useBooking()
   const activeBookingsCount = bookings.filter(b => b.status === 'active').length
 
@@ -50,7 +49,7 @@ export default function Header() {
           : 'bg-transparent'
       }`}
     >
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Logo */}
         <button 
           onClick={navigateHome}
@@ -76,27 +75,27 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* Desktop Right Actions */}
+        {/* Desktop Right Actions - Hiển thị chuẩn trên Máy tính */}
         <div className="hidden md:flex items-center gap-6">
           <div className="flex items-center gap-2">
-  <button
-    onClick={() => setLoginOpen(true)}
-    className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
-      isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
-    }`}
-  >
-    Đăng Nhập
-  </button>
-  <span className={isScrolled ? 'text-gray-300' : 'text-white/30'}>|</span>
-  <button
-    onClick={() => setLoginOpen(true)} // Hoặc setRegisterOpen(true) nếu bạn có modal đăng ký riêng
-    className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
-      isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
-    }`}
-  >
-    Đăng Ký
-  </button>
-</div>
+            <button
+              onClick={() => setLoginOpen(true)}
+              className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
+                isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
+              }`}
+            >
+              Đăng Nhập
+            </button>
+            <span className={isScrolled ? 'text-gray-300' : 'text-white/30'}>|</span>
+            <button
+              onClick={() => setLoginOpen(true)}
+              className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
+                isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
+              }`}
+            >
+              Đăng Ký
+            </button>
+          </div>
           
           <a
             href="tel:+84368789135"
@@ -135,7 +134,7 @@ export default function Header() {
           </button>
         </div>
 
-        {/* Hamburger Menu (Mobile/Tablet Toggle) */}
+        {/* Hamburger Menu Toggle - Chỉ chứa icon trên Điện thoại */}
         <div className="flex items-center gap-4 md:hidden">
           <button
             onClick={() => setHistoryOpen(true)}
@@ -153,32 +152,37 @@ export default function Header() {
           </button>
 
           <button
-  onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
-  className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
->
-  Đăng Nhập
-</button>
-<button
-  onClick={() => { setMobileOpen(false); setLoginOpen(true); }} // Thay bằng modal đăng ký nếu có
-  className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
->
-  Đăng Ký
-</button>
+            className={`p-2 transition-colors cursor-pointer ${
+              isScrolled || mobileOpen ? 'text-gray-800' : 'text-white'
+            }`}
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </div>
 
-      {/* Mobile Menu Content */}
+      {/* Mobile Menu Content - Danh sách bung ra trên Điện thoại */}
       <div
         className={`md:hidden transition-all duration-300 overflow-hidden ${
-          mobileOpen ? 'max-h-[26rem] opacity-100 border-t border-sand-100' : 'max-h-0 opacity-0 pointer-events-none'
+          mobileOpen ? 'max-h-[28rem] opacity-100 border-t border-sand-100' : 'max-h-0 opacity-0 pointer-events-none'
         }`}
       >
         <div className="bg-white/98 backdrop-blur-lg px-6 py-6 space-y-4">
+          {/* Tách biệt nút Đăng ký / Đăng nhập rõ ràng trên Mobile */}
           <button
             onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
             className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
           >
-            Đăng Nhập / Đăng Ký
+            Đăng Nhập
+          </button>
+          
+          <button
+            onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
+            className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
+          >
+            Đăng Ký
           </button>
 
           {navLinks.map((link) => (
@@ -196,7 +200,7 @@ export default function Header() {
             className="flex items-center justify-between w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
           >
             <span>Trạng thái &amp; Lịch sử đặt phòng</span>
-            <span class="bg-sand-100 text-gray-600 font-mono text-xs px-2 py-0.5 rounded-md">{bookings.length} đơn</span>
+            <span className="bg-sand-100 text-gray-600 font-mono text-xs px-2 py-0.5 rounded-md">{bookings.length} đơn</span>
           </button>
 
           <button
@@ -218,7 +222,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Modal Lịch sử đặt phòng (Chỉ giữ lại 1 block duy nhất) */}
+      {/* Modal Lịch sử đặt phòng */}
       {historyOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm"
