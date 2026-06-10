@@ -78,14 +78,25 @@ export default function Header() {
 
         {/* Desktop Right Actions */}
         <div className="hidden md:flex items-center gap-6">
-          <button
-            onClick={() => setLoginOpen(true)}
-            className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
-              isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
-            }`}
-          >
-            Đăng Nhập
-          </button>
+          <div className="flex items-center gap-2">
+  <button
+    onClick={() => setLoginOpen(true)}
+    className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
+      isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
+    }`}
+  >
+    Đăng Nhập
+  </button>
+  <span className={isScrolled ? 'text-gray-300' : 'text-white/30'}>|</span>
+  <button
+    onClick={() => setLoginOpen(true)} // Hoặc setRegisterOpen(true) nếu bạn có modal đăng ký riêng
+    className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
+      isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
+    }`}
+  >
+    Đăng Ký
+  </button>
+</div>
           
           <a
             href="tel:+84368789135"
@@ -142,14 +153,17 @@ export default function Header() {
           </button>
 
           <button
-            className={`p-2 transition-colors cursor-pointer ${
-              isScrolled || mobileOpen ? 'text-gray-800' : 'text-white'
-            }`}
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+  onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
+  className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
+>
+  Đăng Nhập
+</button>
+<button
+  onClick={() => { setMobileOpen(false); setLoginOpen(true); }} // Thay bằng modal đăng ký nếu có
+  className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
+>
+  Đăng Ký
+</button>
         </div>
       </div>
 
