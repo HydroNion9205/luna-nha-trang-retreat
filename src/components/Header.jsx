@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Menu, X, Phone, ChevronDown, Calendar } from 'lucide-react' 
-import { useBooking } from '../context/BookingContext' 
-import { BookingManagement } from './SearchResults'
-import LoginModal from './LoginModal' 
+import { Menu, X, Phone, ChevronDown } from 'lucide-react'
 
 const navLinks = [
   { label: 'Phòng & Suite', href: '#rooms' },
@@ -14,11 +11,7 @@ const navLinks = [
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [loginOpen, setLoginOpen] = useState(false)
-  const [historyOpen, setHistoryOpen] = useState(false)
-
-  const { bookings, view, navigateHome } = useBooking()
-  const activeBookingsCount = bookings.filter(b => b.status === 'active').length
+  const [activeLink, setActiveLink] = useState(null)
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 60)
@@ -28,132 +21,88 @@ export default function Header() {
 
   const handleNavClick = (href) => {
     setMobileOpen(false)
-    
-    if (view !== 'home') {
-      navigateHome()
-      setTimeout(() => {
-        const el = document.querySelector(href)
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 100)
-    } else {
-      const el = document.querySelector(href)
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    const el = document.querySelector(href)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled || mobileOpen
+        isScrolled
           ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-sand-100'
           : 'bg-transparent'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        {/* Logo */}
-        <button 
-          onClick={navigateHome}
-          className={`font-serif text-2xl tracking-[0.2em] uppercase font-light cursor-pointer ${
-            isScrolled || mobileOpen ? 'text-gray-900' : 'text-white'
-          }`}
-        >
-          Luna
-        </button>
-
-        {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <button
-              key={link.href}
-              onClick={() => handleNavClick(link.href)}
-              className={`text-xs tracking-widest uppercase transition-colors font-light cursor-pointer ${
-                isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
-              }`}
-            >
-              {link.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Desktop Right Actions - Hiển thị chuẩn trên Máy tính */}
-        <div className="hidden md:flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setLoginOpen(true)}
-              className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
-                isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
-              }`}
-            >
-              Đăng Nhập
-            </button>
-            <span className={isScrolled ? 'text-gray-300' : 'text-white/30'}>|</span>
-            <button
-              onClick={() => setLoginOpen(true)}
-              className={`text-xs tracking-widest uppercase font-medium transition-colors cursor-pointer ${
-                isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/80 hover:text-white'
-              }`}
-            >
-              Đăng Ký
-            </button>
-          </div>
-          
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo */}
           <a
-            href="tel:+84368789135"
-            className={`flex items-center gap-2 text-xs tracking-wider transition-colors ${
-              isScrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/80 hover:text-white'
-            }`}
+            href="#"
+            className="flex flex-col leading-none group"
+            onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
           >
-            <Phone size={13} strokeWidth={1.8} />
-            +84 368 789 135
+            <span
+              className={`font-serif text-2xl font-light tracking-widest transition-colors duration-300 ${
+                isScrolled ? 'text-ocean-900' : 'text-white'
+              }`}
+            >
+              LUNA
+            </span>
+            <span
+              className={`text-[9px] tracking-[0.3em] uppercase font-light transition-colors duration-300 ${
+                isScrolled ? 'text-luxury-gold' : 'text-ocean-200'
+              }`}
+            >
+              Nha Trang Retreat
+            </span>
           </a>
 
-          <button
-            onClick={() => setHistoryOpen(true)}
-            className={`relative flex items-center gap-1.5 text-xs tracking-widest uppercase transition-colors font-medium cursor-pointer ${
-              isScrolled ? 'text-gray-600 hover:text-ocean-700' : 'text-white/90 hover:text-white'
-            }`}
-          >
-            <Calendar size={13} />
-            Lịch sử
-            {activeBookingsCount > 0 && (
-              <span className="absolute -top-2.5 -right-3.5 bg-ocean-700 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-mono font-bold animate-pulse">
-                {activeBookingsCount}
-              </span>
-            )}
-          </button>
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <button
+                key={link.href}
+                onClick={() => handleNavClick(link.href)}
+                className={`text-[13px] tracking-widest uppercase font-light transition-all duration-300 relative group ${
+                  isScrolled ? 'text-gray-700 hover:text-ocean-700' : 'text-white/90 hover:text-white'
+                }`}
+              >
+                {link.label}
+                <span className={`absolute -bottom-1 left-0 w-0 h-px transition-all duration-300 group-hover:w-full ${
+                  isScrolled ? 'bg-ocean-600' : 'bg-white'
+                }`} />
+              </button>
+            ))}
+          </nav>
 
-          <button
-            onClick={() => handleNavClick('#booking-section')}
-            className={`border px-5 py-2.5 text-xs tracking-widest uppercase font-medium transition-all duration-300 rounded-xl cursor-pointer ${
-              isScrolled
-                ? 'bg-gray-900 text-white border-transparent hover:bg-gray-800 hover:shadow-md'
-                : 'bg-white/10 text-white border-white/20 backdrop-blur-sm hover:bg-white hover:text-gray-900'
-            }`}
-          >
-            Đặt Phòng
-          </button>
-        </div>
+          {/* Right Side */}
+          <div className="hidden md:flex items-center gap-4">
+            <a
+              href="tel:+84368789135"
+              className={`flex items-center gap-2 text-xs tracking-wider transition-colors duration-300 ${
+                isScrolled ? 'text-gray-500 hover:text-ocean-700' : 'text-white/80 hover:text-white'
+              }`}
+            >
+              <Phone size={13} />
+              <span>+84 368 789 135</span>
+            </a>
+            <button
+              onClick={() => handleNavClick('#booking-section')}
+              className={`px-6 py-2.5 text-xs tracking-widest uppercase font-medium transition-all duration-300 ${
+                isScrolled
+                  ? 'bg-ocean-700 text-white hover:bg-ocean-800 shadow-md hover:shadow-lg'
+                  : 'bg-white/20 text-white border border-white/50 hover:bg-white hover:text-ocean-900 backdrop-blur-sm'
+              }`}
+            >
+              Book Now
+            </button>
+          </div>
 
-        {/* Hamburger Menu Toggle - Chỉ chứa icon trên Điện thoại */}
-        <div className="flex items-center gap-4 md:hidden">
+          {/* Mobile Toggle */}
           <button
-            onClick={() => setHistoryOpen(true)}
-            className={`relative p-2 cursor-pointer ${
-              isScrolled || mobileOpen ? 'text-gray-800' : 'text-white'
-            }`}
-            aria-label="Xem lịch sử đặt phòng"
-          >
-            <Calendar size={20} />
-            {activeBookingsCount > 0 && (
-              <span className="absolute top-1 right-1 bg-ocean-700 text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-mono font-bold">
-                {activeBookingsCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            className={`p-2 transition-colors cursor-pointer ${
-              isScrolled || mobileOpen ? 'text-gray-800' : 'text-white'
+            id="mobile-menu-btn"
+            className={`md:hidden p-2 rounded-md transition-colors ${
+              isScrolled ? 'text-gray-800' : 'text-white'
             }`}
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
@@ -163,86 +112,33 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu Content - Danh sách bung ra trên Điện thoại */}
+      {/* Mobile Menu */}
       <div
         className={`md:hidden transition-all duration-300 overflow-hidden ${
-          mobileOpen ? 'max-h-[28rem] opacity-100 border-t border-sand-100' : 'max-h-0 opacity-0 pointer-events-none'
+          mobileOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="bg-white/98 backdrop-blur-lg px-6 py-6 space-y-4">
-          {/* Tách biệt nút Đăng ký / Đăng nhập rõ ràng trên Mobile */}
-          <button
-            onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
-            className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
-          >
-            Đăng Nhập
-          </button>
-          
-          <button
-            onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
-            className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
-          >
-            Đăng Ký
-          </button>
-
+        <div className="bg-white/98 backdrop-blur-lg border-t border-sand-100 px-6 py-6 space-y-4">
           {navLinks.map((link) => (
             <button
               key={link.href}
               onClick={() => handleNavClick(link.href)}
-              className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
+              className="block w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors"
             >
               {link.label}
             </button>
           ))}
-          
-          <button
-            onClick={() => { setMobileOpen(false); setHistoryOpen(true); }}
-            className="flex items-center justify-between w-full text-left text-sm tracking-widest uppercase text-gray-700 hover:text-ocean-700 font-light py-2 border-b border-sand-100 transition-colors cursor-pointer"
-          >
-            <span>Trạng thái &amp; Lịch sử đặt phòng</span>
-            <span className="bg-sand-100 text-gray-600 font-mono text-xs px-2 py-0.5 rounded-md">{bookings.length} đơn</span>
-          </button>
-
           <button
             onClick={() => handleNavClick('#booking-section')}
-            className="w-full mt-4 py-3 bg-ocean-700 text-white text-xs tracking-widest uppercase font-medium hover:bg-ocean-800 transition-colors rounded-xl cursor-pointer"
+            className="w-full mt-4 py-3 bg-ocean-700 text-white text-xs tracking-widest uppercase font-medium hover:bg-ocean-800 transition-colors"
           >
             Đặt Phòng Ngay
           </button>
-          
-          <div className="pt-2 flex justify-center">
-            <a
-              href="tel:+84368789135"
-              className="flex items-center gap-2 text-xs tracking-wider text-gray-500 font-light"
-            >
-              <Phone size={12} />
-              +84 368 789 135
-            </a>
-          </div>
+          <a href="tel:+84368789135" className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+            <Phone size={12} /> +84 368 789 135
+          </a>
         </div>
       </div>
-
-      {/* Modal Lịch sử đặt phòng */}
-      {historyOpen && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm"
-          onClick={() => setHistoryOpen(false)}
-        >
-          <div 
-            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-sand-100 relative max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button onClick={() => setHistoryOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
-              <X size={18} />
-            </button>
-            <div className="pt-2">
-              <BookingManagement />
-            </div>
-          </div>
-        </div>
-      )}
-
-      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
     </header>
   )
 }
