@@ -22,7 +22,7 @@ const rooms = [
     badge: 'Signature',
     badgeColor: 'bg-luxury-gold text-white',
     highlights: ['Ban công riêng 30m²', 'Bồn tắm hướng biển', 'Phòng khách riêng', 'Butler cá nhân'],
-    image: '/images/Angelina_Suite.jpg',
+    image: '/images/angelina-suite.jpg',
   },
   {
     id: 'grand-deluxe',
@@ -32,12 +32,12 @@ const rooms = [
     description: 'Phòng Grand De Luxe kết hợp hoàn hảo giữa thiết kế tối giản hiện đại và sự ấm áp của vật liệu tự nhiên. Tầm nhìn một phần ra vịnh và vườn nhiệt đới.',
     price: 2900000,
     size: 55,
-    maxGuests: 2,
+    maxGuests: 1,
     views: 'Vịnh biển & Vườn',
     badge: 'Phổ biến nhất',
     badgeColor: 'bg-ocean-700 text-white',
     highlights: ['Giường King 2m × 2m', 'Phòng tắm đá cẩm thạch', 'Bàn làm việc cao cấp', 'Sân thượng riêng'],
-    image: '/images/Grand_De_Luxe.jpg',
+    image: '/images/grand-de-luxe.jpg',
   },
   {
     id: 'romantic-hideaway',
@@ -52,7 +52,7 @@ const rooms = [
     badge: 'Dành cho cặp đôi',
     badgeColor: 'bg-rose-500 text-white',
     highlights: ['Giường Canopy', 'Hồ bơi nước muối riêng', 'Gói hoa hồng & rượu', 'Tầm nhìn hoàng hôn'],
-    image: '/images/Romantic_Hideaway.jpg',
+    image: '/images/romantic.jpg',
   },
 ]
 

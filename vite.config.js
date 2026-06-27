@@ -7,4 +7,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    watch: {
+      // Bỏ qua file tạm (.~tmp) để tránh lỗi EBUSY khi copy ảnh
+      ignored: ['**/*.~tmp', '**/*.tmp', '**/~*'],
+    },
+  },
 })

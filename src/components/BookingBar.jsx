@@ -3,11 +3,8 @@ import { Calendar, Users, ChevronDown, Search } from 'lucide-react'
 import { useBooking } from '../context/BookingContext'
 
 const guestOptions = [
-  { label: '1 Người lớn', value: 1 },
-  { label: '2 Người lớn', value: 2 },
-  { label: '2 Người lớn, 1 Trẻ em', value: 3 },
-  { label: '2 Người lớn, 2 Trẻ em', value: 4 },
-  { label: '3 Người lớn', value: 5 },
+  { label: '1 Người', value: 1 },
+  { label: '2 Người', value: 2 },
 ]
 
 export default function BookingBar() {

@@ -337,11 +337,8 @@ export function BookingManagement () {
 
 // ─── Search Bar (in results page) ─────────────────────────────────────────────
 const guestOptions = [
-  { label: '1 Người lớn', value: 1 },
-  { label: '2 Người lớn', value: 2 },
-  { label: '2 Người lớn, 1 Trẻ em', value: 3 },
-  { label: '2 Người lớn, 2 Trẻ em', value: 4 },
-  { label: '3 Người lớn', value: 5 },
+  { label: '1 Người', value: 1 },
+  { label: '2 Người', value: 2 },
 ]
 
 function ModifySearch({ searchParams, onModify }) {
@@ -425,6 +422,9 @@ export default function SearchResults() {
 
   const nights = calcNights(localParams.checkIn, localParams.checkOut)
 
+  // Lọc phòng: chỉ hiển thị phòng có maxGuests >= số khách đã chọn
+  const filteredRooms = rooms.filter(room => room.maxGuests >= localParams.guests)
+
   const handleBook = (room) => setBookingRoom(room)
 
   const handleConfirm = (bookingData) => {
@@ -502,26 +502,40 @@ export default function SearchResults() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h1 className="font-serif text-2xl text-gray-900 font-light">Phòng Trống</h1>
-                <p className="text-gray-400 text-xs mt-0.5">{rooms.length} phòng khả dụng cho kỳ lưu trú của bạn</p>
+                <p className="text-gray-400 text-xs mt-0.5">
+                  {filteredRooms.length > 0
+                    ? `${filteredRooms.length} phòng phù hợp cho ${localParams.guests} khách`
+                    : 'Không có phòng phù hợp với lựa chọn của bạn'}
+                </p>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] text-gray-400 uppercase tracking-widest">
-                <div className="w-2 h-2 rounded-full bg-green-400" />
-                Còn phòng
+                <div className={`w-2 h-2 rounded-full ${filteredRooms.length > 0 ? 'bg-green-400' : 'bg-red-400'}`} />
+                {filteredRooms.length > 0 ? 'Còn phòng' : 'Hết phòng'}
               </div>
             </div>
 
             {/* Rooms grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {rooms.map((room) => (
-                <RoomResultCard
-                  key={room.id}
-                  room={room}
-                  searchParams={localParams}
-                  nights={nights}
-                  onBook={handleBook}
-                />
-              ))}
-            </div>
+            {filteredRooms.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {filteredRooms.map((room) => (
+                  <RoomResultCard
+                    key={room.id}
+                    room={room}
+                    searchParams={localParams}
+                    nights={nights}
+                    onBook={handleBook}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-sand-100 rounded-2xl">
+                <div className="w-14 h-14 bg-sand-50 rounded-full flex items-center justify-center mb-4">
+                  <Users size={24} className="text-gray-300" />
+                </div>
+                <p className="text-gray-500 font-medium mb-1">Không tìm thấy phòng phù hợp</p>
+                <p className="text-gray-400 text-sm">Không có phòng nào sức chứa {localParams.guests} khách.<br/>Vui lòng điều chỉnh số khách để xem thêm lựa chọn.</p>
+              </div>
+            )}
 
             {/* Inclusions */}
             <div className="mt-8 p-5 bg-white border border-sand-100 rounded-2xl">

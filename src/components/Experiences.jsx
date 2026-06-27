@@ -48,6 +48,15 @@ const experiences = [
   },
 ]
 
+const experienceImages = [
+  '/images/yoga.jpg',
+  '/images/lanbien.jpg',
+  '/images/tranhthuymac.jpg',
+  '/images/duthuyen.jpg',
+  '/images/spakhoang.jpg',
+  '/images/lophocnauan.jpg',
+]
+
 export default function Experiences() {
   const ref = useRef(null)
   const [isVisible, setIsVisible] = useState(false)
@@ -85,46 +94,63 @@ export default function Experiences() {
           </p>
         </div>
 
-        {/* Grid — 6 cards, monochrome icons, no "Tìm hiểu" links */}
+        {/* Grid — 6 cards với nền ảnh */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {experiences.map((exp, index) => (
             <div
               key={exp.title}
-              className={`group relative p-7 rounded-2xl border border-sand-200 bg-white
-                          hover:border-ocean-200 hover:shadow-xl transition-all duration-500
+              className={`group relative p-7 rounded-2xl border border-white/10 overflow-hidden
+                          hover:border-white/30 hover:shadow-2xl transition-all duration-500
                           ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
               style={{ transitionDelay: isVisible ? `${index * 90}ms` : '0ms' }}
             >
-              {/* Tag badge */}
-              <span className="inline-block mb-5 text-[9px] tracking-[0.3em] uppercase text-gray-400
-                               bg-sand-50 border border-sand-200 px-2.5 py-1 rounded-full">
-                {exp.tag}
-              </span>
+              {/* Ảnh nền */}
+              <img
+                src={experienceImages[index]}
+                alt={exp.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              />
+              
+              {/* Lớp phủ gradient tối mỏng để đảm bảo chữ trắng luôn đọc được, tập trung tối dần ở phía dưới */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80 transition-all duration-500 group-hover:to-black/90" />
 
-              {/* Monochrome icon */}
-              <div className="mb-4 text-gray-700 group-hover:text-ocean-700 transition-colors duration-300">
-                {exp.icon}
+              {/* Nội dung bên trên lớp phủ */}
+              <div className="relative z-10 flex flex-col h-full text-white">
+                {/* Tag badge */}
+                <div className="mb-5">
+                  <span className="inline-block text-[9px] tracking-[0.3em] uppercase text-white
+                                   bg-white/20 border border-white/30 backdrop-blur-md px-2.5 py-1 rounded-full">
+                    {exp.tag}
+                  </span>
+                </div>
+
+                {/* Icon */}
+                <div className="mb-4 text-white/90 group-hover:text-ocean-400 transition-colors duration-300">
+                  {exp.icon}
+                </div>
+
+                {/* Tiêu đề */}
+                <h3 className="font-serif text-xl text-white font-light mb-2
+                               group-hover:text-ocean-300 transition-colors">
+                  {exp.title}
+                </h3>
+
+                {/* Mô tả */}
+                <p className="text-white/70 text-sm leading-relaxed mb-5">{exp.desc}</p>
+
+                {/* Giờ */}
+                <div className="flex items-center gap-1.5 text-[10px] tracking-wider text-white/50 uppercase mt-auto pt-2">
+                  <Clock size={11} strokeWidth={1.5} />
+                  {exp.time}
+                </div>
               </div>
 
-              <h3 className="font-serif text-xl text-gray-900 font-light mb-2
-                             group-hover:text-ocean-800 transition-colors">
-                {exp.title}
-              </h3>
-              <p className="text-gray-400 text-sm leading-relaxed mb-5">{exp.desc}</p>
-
-              {/* Time — only footer info, no "Tìm hiểu" link */}
-              <div className="flex items-center gap-1.5 text-[10px] tracking-wider text-gray-300 uppercase">
-                <Clock size={11} strokeWidth={1.5} />
-                {exp.time}
-              </div>
-
-              {/* Subtle hover bottom accent */}
-              <div className="absolute bottom-0 left-7 right-7 h-px bg-ocean-300
+              {/* Accent bottom */}
+              <div className="absolute bottom-0 left-7 right-7 h-px bg-ocean-400 z-10
                               scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-full" />
             </div>
           ))}
         </div>
-        {/* "Gói trọn vẹn" banner removed per design requirements */}
       </div>
     </section>
   )
