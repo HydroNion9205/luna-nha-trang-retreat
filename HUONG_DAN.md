@@ -146,10 +146,16 @@ export default defineConfig({
     react(),
     tailwindcss(),   // ← Thêm dòng này để kích hoạt Tailwind v4
   ],
+  // Bỏ qua file tạm để tránh lỗi EBUSY trên Windows
+  server: {
+    watch: {
+      ignored: ['**/*.tmp', '**/*.log', '**/node_modules/**'],
+    },
+  },
 })
 ```
 
-> **Tại sao?** Tailwind v4 tích hợp trực tiếp vào Vite qua plugin, không cần file config riêng.
+> **Tại sao?** Tailwind v4 tích hợp trực tiếp vào Vite qua plugin, không cần file config riêng. Cấu hình `watch.ignored` tránh crash server trên Windows.
 
 ### 3.2 Cấu Hình `src/index.css`
 
@@ -351,16 +357,19 @@ createRoot(document.getElementById('root')).render(
 ```
 public/
   images/
-    Angelina_Suite.jpg      ← /images/Angelina_Suite.jpg
-    Grand_De_Luxe.jpg       ← /images/Grand_De_Luxe.jpg
-    Romantic_Hideaway.jpg   ← /images/Romantic_Hideaway.jpg
-    La_Mer.jpg              ← /images/La_Mer.jpg
-    HaiSan.jpg              ← /images/HaiSan.jpg
-    Wine_Cellar.jpg         ← /images/Wine_Cellar.jpg
-    TamNhinVinh.jpg         ← /images/TamNhinVinh.jpg
-    HoangHon.jpg            ← /images/HoangHon.jpg
+    la-mer.jpg           ← /images/la-mer.jpg
+    angelina-suite.jpg   ← /images/angelina-suite.jpg
+    grand-de-luxe.jpg    ← /images/grand-de-luxe.jpg
+    romantic.jpg         ← /images/romantic.jpg
+    yoga.jpg             ← /images/yoga.jpg        (Experiences)
+    lanbien.jpg          ← /images/lanbien.jpg     (Experiences)
+    tranhthuymac.jpg     ← /images/tranhthuymac.jpg
+    duthuyen.jpg         ← /images/duthuyen.jpg
+    spakhoang.jpg        ← /images/spakhoang.jpg
+    lophocnauan.jpg      ← /images/lophocnauan.jpg
+    footer.jpg           ← /images/footer.jpg
   videos/
-    hero-sea.mp4            ← /videos/hero-sea.mp4
+    hero-sea.mp4         ← /videos/hero-sea.mp4
   favicon.svg
 ```
 
@@ -368,12 +377,12 @@ public/
 
 ```jsx
 {/* ✅ ĐÚNG */}
-<img src="/images/Angelina_Suite.jpg" alt="Angelina Suite" />
+<img src="/images/la-mer.jpg" alt="La Mer" />
 <video src="/videos/hero-sea.mp4" />
 
 {/* ❌ SAI — sẽ lỗi trên Vercel */}
-<img src="/public/images/Angelina_Suite.jpg" />
-<img src="public/images/Angelina_Suite.jpg" />
+<img src="/public/images/la-mer.jpg" />
+<img src="public/images/la-mer.jpg" />
 ```
 
 ---
@@ -408,61 +417,94 @@ src/
 
 ### 6.1 Context — `src/context/BookingContext.jsx`
 
-File này quản lý state toàn cục (Global State) — view hiện tại là Home hay Search, thông tin tìm kiếm, danh sách đặt phòng.
+File này quản lý state toàn cục (Global State) — view hiện tại, thông tin tìm kiếm, danh sách đặt phòng, và hàm kiểm tra xung đột lịch.
 
 ```jsx
 // src/context/BookingContext.jsx
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
 
-// Bước 1: Tạo Context object
 const BookingContext = createContext(null)
 
-// Bước 2: Provider — bao bọc toàn bộ app, cung cấp state cho các component con
+// Load & save bookings từ localStorage (dữ liệu bền vững giữa các lần reload)
+const loadBookings = () => {
+  try {
+    const saved = localStorage.getItem('luna_bookings')
+    return saved ? JSON.parse(saved) : []
+  } catch { return [] }
+}
+const saveBookings = (bookings) => {
+  try { localStorage.setItem('luna_bookings', JSON.stringify(bookings)) } catch {}
+}
+
 export function BookingProvider({ children }) {
   const [view, setView] = useState('home')      // 'home' | 'search'
-  const [searchParams, setSearchParams] = useState({
-    checkIn: '',
-    checkOut: '',
-    guests: 2,
-    roomType: 'all',
-  })
-  const [bookings, setBookings] = useState([])   // Mảng chứa các đặt phòng
+  const [searchParams, setSearchParams] = useState(null)
+  const [bookings, setBookings] = useState(loadBookings)
 
-  // Hàm thêm đặt phòng mới
-  const addBooking = (room) => {
+  const navigateToSearch = useCallback((params) => {
+    setSearchParams(params)
+    setView('search')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  const navigateHome = useCallback(() => {
+    setView('home')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  // Thêm đặt phòng mới — trả về object booking (có .id)
+  const addBooking = useCallback((booking) => {
     const newBooking = {
-      id: Date.now(),                            // ID tự sinh theo timestamp
-      room,
-      ...searchParams,
-      status: 'confirmed',
+      ...booking,
+      id: `LNA-${Date.now()}`,   // Mã đặt phòng tự sinh: LNA-XXXXXXXXX
+      status: 'active',
+      bookedAt: new Date().toISOString(),
     }
-    setBookings(prev => [newBooking, ...prev])
-  }
+    setBookings((prev) => {
+      const updated = [newBooking, ...prev]
+      saveBookings(updated)
+      return updated
+    })
+    return newBooking
+  }, [])
 
-  // Hàm huỷ đặt phòng
-  const cancelBooking = (id) => {
-    setBookings(prev =>
-      prev.map(b => b.id === id ? { ...b, status: 'cancelled' } : b)
-    )
-  }
+  // Kiểm tra xung đột lịch: cùng phòng + status active + ngày chồng nhau
+  // Điều kiện: newIn < existingOut AND newOut > existingIn
+  const checkConflict = useCallback((roomId, checkIn, checkOut, bookings) => {
+    const newIn  = new Date(checkIn).getTime()
+    const newOut = new Date(checkOut).getTime()
+    return bookings.find(b =>
+      b.roomId === roomId &&
+      b.status === 'active' &&
+      newIn  < new Date(b.checkOut).getTime() &&
+      newOut > new Date(b.checkIn).getTime()
+    ) || null
+  }, [])
+
+  // Hủy đặt phòng (đổi status thành 'cancelled', không xóa)
+  const cancelBooking = useCallback((bookingId) => {
+    setBookings((prev) => {
+      const updated = prev.map((b) =>
+        b.id === bookingId ? { ...b, status: 'cancelled' } : b
+      )
+      saveBookings(updated)
+      return updated
+    })
+  }, [])
 
   return (
-    <BookingContext.Provider value={{
-      view, setView,
-      searchParams, setSearchParams,
-      bookings,
-      addBooking,
-      cancelBooking,
-    }}>
+    <BookingContext.Provider
+      value={{ view, searchParams, bookings, navigateToSearch, navigateHome, addBooking, cancelBooking, checkConflict }}
+    >
       {children}
     </BookingContext.Provider>
   )
 }
 
-// Bước 3: Custom hook để dùng context dễ dàng
-export function useBooking() {
+// Custom hook để dùng context dễ dàng
+export const useBooking = () => {
   const ctx = useContext(BookingContext)
-  if (!ctx) throw new Error('useBooking phải dùng bên trong BookingProvider')
+  if (!ctx) throw new Error('useBooking must be used within BookingProvider')
   return ctx
 }
 ```
@@ -483,16 +525,14 @@ import Experiences from './components/Experiences'
 import Footer from './components/Footer'
 import SearchResults from './components/SearchResults'
 
-// --- Nút Back-to-Top (đơn sắc) ---
+// --- Nút Back-to-Top ---
 function BackToTop() {
   const [visible, setVisible] = useState(false)
-
   useEffect(() => {
     const handleScroll = () => setVisible(window.scrollY > 600)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-
   return (
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -502,7 +542,6 @@ function BackToTop() {
         hover:bg-gray-700 transition-all duration-300
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
     >
-      {/* Icon SVG mũi tên lên */}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M18 15l-6-6-6 6" />
@@ -511,38 +550,17 @@ function BackToTop() {
   )
 }
 
-// --- Nút Gọi Điện Nổi (đơn sắc) ---
-function FloatingContact() {
-  return (
-    <a
-      href="tel:+84368789135"
-      aria-label="Gọi điện hotline"
-      className="fixed bottom-24 right-8 z-40 w-11 h-11 bg-gray-900 text-white
-        rounded-full flex items-center justify-center shadow-lg
-        hover:bg-gray-700 transition-all duration-300"
-    >
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-      </svg>
-    </a>
-  )
-}
-
 // --- View switcher: Home hoặc SearchResults ---
 function AppContent() {
   const { view } = useBooking()
-
   if (view === 'search') {
     return (
       <div className="min-h-screen">
         <SearchResults />
         <BackToTop />
-        <FloatingContact />
       </div>
     )
   }
-
   return (
     <div className="min-h-screen">
       <Header />
@@ -556,12 +574,10 @@ function AppContent() {
       </main>
       <Footer />
       <BackToTop />
-      <FloatingContact />
     </div>
   )
 }
 
-// --- Root export ---
 export default function App() {
   return (
     <BookingProvider>
@@ -575,39 +591,26 @@ export default function App() {
 
 ```jsx
 // src/components/Hero.jsx
-import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 
-// Phần nền video
 const HeroBackground = () => (
   <div className="absolute inset-0 overflow-hidden -z-10">
-    {/* Video nền — đặt file trong public/videos/hero-sea.mp4 */}
-    <video
-      autoPlay
-      loop
-      muted
-      playsInline
+    <video autoPlay loop muted playsInline
       className="w-full h-screen object-cover absolute top-0 left-0 -z-10"
     >
       <source src="/videos/hero-sea.mp4" type="video/mp4" />
-      Trình duyệt của bạn không hỗ trợ thẻ video.
     </video>
-
-    {/* Overlay tối để chữ nổi bật */}
     <div className="absolute inset-0 bg-slate-950/30" />
   </div>
 )
 
 export default function Hero() {
-  const scrollToBooking = () => {
+  const scrollToBooking = () =>
     document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' })
-  }
 
   return (
     <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
       <HeroBackground />
-
-      {/* Nội dung trung tâm */}
       <div className="relative z-10 text-center text-white px-4">
         <p className="text-sm tracking-[0.3em] uppercase text-white/70 mb-4 animate-fade-in">
           Nha Trang · Việt Nam
@@ -626,12 +629,9 @@ export default function Hero() {
           Đặt Phòng Ngay
         </button>
       </div>
-
-      {/* Mũi tên cuộn xuống */}
       <button
         onClick={scrollToBooking}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 hover:text-white
-          transition-colors animate-float"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 hover:text-white transition-colors animate-float"
       >
         <ChevronDown size={32} strokeWidth={1} />
       </button>
@@ -647,196 +647,274 @@ export default function Hero() {
 import { useState } from 'react'
 
 // === DỮ LIỆU PHÒNG (Mock Data) ===
-// Sửa price, image, name tại đây để thay đổi hiển thị
-const rooms = [
+export const rooms = [
   {
-    id: 1,
-    name: 'Angelina Suite',
-    category: 'Suite',
-    price: 4800000,                          // VNĐ/đêm
-    image: '/images/Angelina_Suite.jpg',     // Đường dẫn ảnh trong public/images/
-    size: '85m²',
-    view: 'Toàn cảnh vịnh biển',
-    beds: '1 giường King',
-    guests: 2,
-    description: 'Suite sang trọng với ban công riêng nhìn ra vịnh Nha Trang.',
-    amenities: ['WiFi tốc độ cao', 'Bồn tắm freestanding', 'Minibar', 'Máy pha cà phê', 'Butler riêng'],
+    id: 'la-mer',
+    name: 'La Mer Suite',
+    type: 'Suite Hướng Biển',
+    price: 6500000,
+    image: '/images/la-mer.jpg',
+    size: 95, maxGuests: 2, views: 'Vịnh Nha Trang',
+    badge: 'Bestseller', badgeColor: 'bg-luxury-gold/90 text-white',
+    description: 'Suite toàn cảnh biển với bể bơi riêng và butler phục vụ 24/7.',
+    amenities: ['Bể bơi riêng', 'Butler 24/7', 'Champagne chào mừng', 'WiFi'],
   },
   {
-    id: 2,
+    id: 'angelina',
+    name: 'Angelina Suite',
+    type: 'Suite Cao Cấp',
+    price: 4800000,
+    image: '/images/angelina-suite.jpg',
+    size: 85, maxGuests: 2, views: 'Vịnh biển & núi',
+    badge: 'Mới', badgeColor: 'bg-ocean-700/90 text-white',
+    description: 'Suite sang trọng với ban công riêng nhìn ra vịnh Nha Trang.',
+    amenities: ['WiFi tốc độ cao', 'Bồn tắm freestanding', 'Minibar', 'Butler'],
+  },
+  {
+    id: 'grand',
     name: 'Grand De Luxe',
-    category: 'Deluxe',
+    type: 'Phòng Deluxe',
     price: 3200000,
-    image: '/images/Grand_De_Luxe.jpg',
-    size: '55m²',
-    view: 'Hướng biển',
-    beds: '1 giường King hoặc 2 giường Twin',
-    guests: 2,
+    image: '/images/grand-de-luxe.jpg',
+    size: 55, maxGuests: 1, views: 'Hướng biển',   // ← maxGuests: 1 (phòng đơn)
+    badge: 'Phổ biến', badgeColor: 'bg-sand-600/90 text-white',
     description: 'Phòng Deluxe rộng rãi với thiết kế tối giản, tầm nhìn hướng biển.',
     amenities: ['WiFi tốc độ cao', 'Vòi sen rain shower', 'Minibar', 'Bàn làm việc'],
   },
   {
-    id: 3,
+    id: 'romantic',
     name: 'Romantic Hideaway',
-    category: 'Suite',
-    price: 6500000,
-    image: '/images/Romantic_Hideaway.jpg',
-    size: '110m²',
-    view: 'Vịnh biển & bể bơi riêng',
-    beds: '1 giường King',
-    guests: 2,
+    type: 'Suite Riêng Tư',
+    price: 8200000,
+    image: '/images/romantic.jpg',
+    size: 120, maxGuests: 2, views: 'Bể bơi & biển',
+    badge: 'Luxury', badgeColor: 'bg-purple-700/90 text-white',
     description: 'Suite riêng tư tuyệt đối với bể bơi infinity nhìn thẳng ra biển.',
-    amenities: ['Bể bơi riêng', 'Butler 24/7', 'Champagne chào mừng', 'Bồn tắm ngoài trời', 'WiFi'],
+    amenities: ['Bể bơi infinity', 'Butler 24/7', 'Champagne', 'Bồn tắm ngoài trời'],
   },
 ]
-
-// Helper format tiền Việt
-const formatPrice = (price) =>
-  new Intl.NumberFormat('vi-VN').format(price) + ' ₫'
-
-// === COMPONENT CARD ===
-export default function RoomCard({ room }) {
-  const [showModal, setShowModal] = useState(false)
-
-  return (
-    <>
-      {/* Card */}
-      <div
-        className="group cursor-pointer"
-        onClick={() => setShowModal(true)}
-      >
-        {/* Ảnh phòng */}
-        <div className="overflow-hidden mb-4 aspect-[4/3]">
-          <img
-            src={room.image}
-            alt={room.name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-        </div>
-
-        {/* Thông tin tóm tắt */}
-        <div>
-          <span className="text-xs tracking-widest text-gray-400 uppercase">{room.category}</span>
-          <h3 className="font-serif text-2xl mt-1 mb-2">{room.name}</h3>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">{room.size} · {room.view}</span>
-            <span className="font-semibold text-gray-900">
-              {formatPrice(room.price)}<span className="text-xs font-normal text-gray-400">/đêm</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal Chi Tiết */}
-      {showModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="bg-white max-w-2xl w-full rounded-sm overflow-hidden shadow-2xl"
-            onClick={e => e.stopPropagation()}   // Chặn click lan ra overlay
-          >
-            <img src={room.image} alt={room.name} className="w-full h-72 object-cover" />
-            <div className="p-8">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-xs tracking-widest text-gray-400 uppercase mb-1">{room.category}</p>
-                  <h2 className="font-serif text-3xl">{room.name}</h2>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-semibold">{formatPrice(room.price)}</p>
-                  <p className="text-sm text-gray-400">mỗi đêm</p>
-                </div>
-              </div>
-              <p className="text-gray-600 mb-6">{room.description}</p>
-              <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
-                <span>📐 {room.size}</span>
-                <span>👁 {room.view}</span>
-                <span>🛏 {room.beds}</span>
-                <span>👤 Tối đa {room.guests} khách</span>
-              </div>
-              <ul className="space-y-1 mb-6">
-                {room.amenities.map(a => (
-                  <li key={a} className="text-sm text-gray-600 flex gap-2">
-                    <span className="text-green-500">✓</span> {a}
-                  </li>
-                ))}
-              </ul>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 border border-gray-300 py-3 text-sm tracking-widest uppercase
-                    hover:bg-gray-50 transition-colors"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-// Export rooms để dùng ở SearchResults.jsx
-export { rooms }
 ```
 
-### 6.5 Rooms Section — `src/components/Rooms.jsx`
+---
+
+## 📌 PHẦN 7 — Xây Dựng Modal Đặt Phòng 3 Bước
+
+Đây là tính năng trọng tâm của dự án. Modal được xây dựng trong `SearchResults.jsx`.
+
+### 7.1 Sơ Đồ Luồng
+
+```
+Bấm "Đặt Ngay"
+      ↓
+  [Bước 1] Xem tóm tắt
+  - Thông tin phòng
+  - Ngày nhận/trả, số đêm
+  - Tổng tiền, chính sách hủy
+      ↓ "Tiếp tục"
+  [Bước 2] Điền thông tin
+  - Họ và tên (bắt buộc)
+  - Email (bắt buộc, validate regex)
+  - Số điện thoại (bắt buộc, 9-11 số)
+  - Yêu cầu đặc biệt (tùy chọn)
+  - Kiểm tra xung đột lịch ← QUAN TRỌNG
+      ↓ Không có xung đột → "Xác nhận đặt phòng"
+  [Bước 3] Xác nhận thành công
+  - Loading spinner
+  - Mã đặt phòng LNA-XXXXXXXXX
+  - Chi tiết toàn bộ đơn hàng
+```
+
+### 7.2 Thanh Tiến Trình (Step Indicator)
 
 ```jsx
-// src/components/Rooms.jsx
-import RoomCard, { rooms } from './RoomCard'
+const steps = ['Tìm kiếm', 'Điền thông tin', 'Xác nhận']
 
-export default function Rooms() {
-  return (
-    <section id="rooms" className="py-24 px-4 bg-white">
-      <div className="max-w-6xl mx-auto">
-
-        {/* Tiêu đề section */}
-        <div className="text-center mb-16">
-          <p className="section-line text-xs tracking-[0.3em] uppercase text-gray-400 mb-3">
-            Phòng & Suite
-          </p>
-          <h2 className="font-serif text-4xl md:text-5xl font-light">
-            Không Gian Của Bạn
-          </h2>
-          <p className="text-gray-500 mt-4 max-w-md mx-auto">
-            Mỗi phòng là một tác phẩm kiến trúc, nơi sự sang trọng hòa quyện với thiên nhiên.
-          </p>
-        </div>
-
-        {/* Grid 3 card phòng */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {rooms.map(room => (
-            <RoomCard key={room.id} room={room} />
-          ))}
-        </div>
-
-        {/* CTA cuối section */}
-        <div className="text-center mt-16">
-          <p className="text-gray-500 mb-4">Cần tư vấn thêm về phòng phù hợp?</p>
-          <a
-            href="tel:+84368789135"
-            className="inline-block border border-gray-900 px-10 py-3 text-sm tracking-widest uppercase
-              hover:bg-gray-900 hover:text-white transition-all duration-300"
+<div className="flex items-center">
+  {steps.map((label, i) => {
+    const num = i + 1
+    const active = step === num
+    const done   = step > num
+    return (
+      <div key={label} className="flex items-center flex-1 last:flex-none">
+        <div className="flex flex-col items-center">
+          {/* Vòng tròn số bước */}
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium
+            ${done   ? 'bg-ocean-800 text-white'      // Đã xong → xanh đậm + dấu ✓
+            : active ? 'bg-luxury-gold text-white'    // Đang active → vàng gold
+            :          'bg-sand-100 text-gray-400'}`} // Chưa đến → xám nhạt
           >
-            Hotline: +84 368 789 135
-          </a>
+            {done ? <Check size={12} /> : num}
+          </div>
+          <span className={`mt-1 text-[9px] tracking-wide uppercase whitespace-nowrap
+            ${active ? 'text-luxury-gold font-medium' : done ? 'text-ocean-800' : 'text-gray-300'}`}>
+            {label}
+          </span>
         </div>
+        {/* Đường nối giữa các bước */}
+        {i < steps.length - 1 && (
+          <div className={`h-px flex-1 mx-2 mb-4 transition-all duration-300
+            ${step > num ? 'bg-ocean-800' : 'bg-sand-200'}`} />
+        )}
       </div>
-    </section>
-  )
+    )
+  })}
+</div>
+```
+
+### 7.3 Validate Form (Bước 2)
+
+```jsx
+const [errors, setErrors] = useState({})
+
+const validate = () => {
+  const e = {}
+  if (!form.name.trim())
+    e.name = 'Vui lòng nhập họ tên'
+  if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email))
+    e.email = 'Email không hợp lệ'
+  if (!form.phone.trim() || !/^[0-9]{9,11}$/.test(form.phone.replace(/\s/g, '')))
+    e.phone = 'Số điện thoại không hợp lệ'
+  setErrors(e)
+  return Object.keys(e).length === 0
 }
 ```
 
 ---
 
-## 📌 PHẦN 7 — Cách Dùng Tailwind CSS Đúng Cách
+## 📌 PHẦN 8 — Logic Kiểm Tra Xung Đột Lịch Đặt Phòng
 
-### Cú Pháp Class Cơ Bản
+### 8.1 Nguyên Lý Hoạt Động
+
+Hai khoảng thời gian **A** và **B** chồng lên nhau khi và chỉ khi:
+
+```
+A.start < B.end  AND  A.end > B.start
+```
+
+Ví dụ minh họa:
+```
+Booking cũ:     |======== 05/07 → 10/07 ========|
+Đặt mới 1:  |== 03/07 → 07/07 ==|              ← XungĐột (bắt đầu trước, kết thúc giữa)
+Đặt mới 2:                |== 08/07 → 12/07 ==| ← Xung Đột (bắt đầu giữa, kết thúc sau)
+Đặt mới 3:      |= 06/07 → 09/07 =|            ← Xung Đột (nằm trong)
+Đặt mới 4:  |======= 04/07 → 11/07 =======|   ← Xung Đột (bao trùm)
+Đặt mới 5:  |= 01/07 → 05/07 =|               ← KHÔNG xung đột (kề nhau)
+Đặt mới 6:                     |= 10/07 → ... ← KHÔNG xung đột (kề nhau)
+```
+
+### 8.2 Hàm `checkConflict` trong BookingContext
+
+```jsx
+const checkConflict = useCallback((roomId, checkIn, checkOut, bookings) => {
+  const newIn  = new Date(checkIn).getTime()
+  const newOut = new Date(checkOut).getTime()
+  return bookings.find(b =>
+    b.roomId === roomId &&        // Cùng phòng
+    b.status === 'active' &&      // Chưa bị hủy
+    newIn  < new Date(b.checkOut).getTime() &&
+    newOut > new Date(b.checkIn).getTime()
+  ) || null
+}, [])
+```
+
+### 8.3 Gọi Kiểm Tra Trước Khi Sang Bước 3
+
+```jsx
+const handleStep2Next = () => {
+  if (!validate()) return   // Validate form trước
+
+  // Kiểm tra xung đột lịch
+  const conflict = checkConflict(room.id, searchParams.checkIn, searchParams.checkOut, bookings)
+  if (conflict) {
+    setConflictError(conflict)   // Lưu thông tin xung đột để hiển thị
+    return                        // Dừng lại, KHÔNG sang bước 3
+  }
+
+  setConflictError(null)
+  setStep(3)   // Không xung đột → chuyển sang bước 3
+}
+```
+
+### 8.4 Hiển Thị Thông Báo Xung Đột
+
+```jsx
+{conflictError && (
+  <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+    <AlertCircle size={16} className="text-orange-500 mt-0.5 flex-shrink-0" />
+    <div>
+      <p className="text-sm font-medium text-orange-700 mb-0.5">
+        Phòng đã được đặt trong khoảng thời gian này
+      </p>
+      <p className="text-xs text-orange-600">
+        Đặt phòng <span className="font-semibold">{conflictError.id}</span> đang
+        chiếm phòng từ <span className="font-semibold">{fmt(conflictError.checkIn)}</span> đến{' '}
+        <span className="font-semibold">{fmt(conflictError.checkOut)}</span>.
+        Vui lòng chọn ngày khác hoặc hủy đặt phòng hiện tại.
+      </p>
+    </div>
+  </div>
+)}
+```
+
+---
+
+## 📌 PHẦN 9 — Section Trải Nghiệm (Experiences) với Ảnh Nền
+
+### 9.1 Cấu Trúc Dữ Liệu
+
+```jsx
+const experiences = [
+  {
+    icon: <Sun size={22} strokeWidth={1.4} />,
+    title: 'Yoga Bình Minh',
+    tag: 'Sức Khỏe',
+    time: '05:30 – 07:00',
+    image: '/images/yoga.jpg',        // ← ảnh thực tế làm nền
+    desc: 'Đón bình minh trên vách đá cùng giảng viên yoga cao cấp...',
+  },
+  // 5 trải nghiệm khác: lanbien, tranhthuymac, duthuyen, spakhoang, lophocnauan
+]
+```
+
+### 9.2 Card Với Ảnh Nền + Hover Hiện Mô Tả
+
+```jsx
+<div
+  className="relative overflow-hidden rounded-2xl cursor-pointer group"
+  style={{ backgroundImage: `url(${exp.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+>
+  {/* Gradient overlay luôn hiển thị */}
+  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+  {/* Nội dung chữ */}
+  <div className="relative z-10 p-7 flex flex-col justify-end min-h-[260px]">
+    {/* Tag badge */}
+    <span className="absolute top-4 left-4 px-2.5 py-1 bg-white/20 backdrop-blur-sm
+      rounded-full text-[9px] tracking-widest uppercase text-white/90 font-medium">
+      {exp.tag}
+    </span>
+
+    {/* Icon + Tiêu đề (luôn thấy) */}
+    <div className="text-white/80 mb-1">{exp.icon}</div>
+    <h3 className="font-serif text-xl text-white font-light mb-1">{exp.title}</h3>
+
+    {/* Mô tả — ẩn mặc định, trượt hiện khi hover */}
+    <div className="overflow-hidden transition-all duration-500 max-h-0 group-hover:max-h-24">
+      <p className="text-white/80 text-sm leading-relaxed mb-2">{exp.desc}</p>
+    </div>
+
+    {/* Thời gian (luôn thấy) */}
+    <div className="flex items-center gap-1.5 text-white/60 text-xs">
+      <Clock size={11} />
+      <span>{exp.time}</span>
+    </div>
+  </div>
+</div>
+```
+
+---
+
+## 📌 PHẦN 10 — Cách Dùng Tailwind CSS Đúng Cách
 
 ```jsx
 // Layout
@@ -844,16 +922,16 @@ export default function Rooms() {
 <div className="grid grid-cols-3 gap-8">
 <div className="max-w-6xl mx-auto px-4">
 
-// Spacing (padding/margin)
+// Spacing
 <div className="p-4">       {/* padding 4 = 1rem */}
 <div className="px-8 py-4"> {/* padding ngang 8, dọc 4 */}
 <div className="mb-6">      {/* margin-bottom 6 = 1.5rem */}
 
 // Typography
-<h1 className="font-serif text-5xl font-light">   {/* font serif, cỡ 5xl, nhẹ */}
+<h1 className="font-serif text-5xl font-light">
 <p className="text-sm text-gray-500 tracking-widest">
 
-// Màu background & text (dùng màu đã định nghĩa trong @theme)
+// Màu tùy chỉnh (đã định nghĩa trong @theme)
 <div className="bg-ocean-800 text-white">
 <div className="bg-sand-50">
 <span className="text-luxury-gold">
@@ -861,7 +939,7 @@ export default function Rooms() {
 // Hover & transition
 <button className="bg-gray-900 hover:bg-gray-700 transition-colors duration-300">
 
-// Responsive (mobile-first: mặc định là mobile, md: = tablet, lg: = desktop)
+// Responsive (mobile-first)
 <div className="text-2xl md:text-4xl lg:text-6xl">
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
 
@@ -870,7 +948,7 @@ export default function Rooms() {
 <div className="relative overflow-hidden">
 <div className="absolute inset-0">
 
-// Dùng class custom đã tạo trong CSS
+// Class utility tùy chỉnh
 <div className="glass">           {/* glassmorphism */}
 <div className="section-line">   {/* đường kẻ vàng */}
 <div className="hover-scale">    {/* scale khi hover */}
@@ -879,25 +957,21 @@ export default function Rooms() {
 
 ---
 
-## 📌 PHẦN 8 — Cách Dùng Lucide React (Icon)
+## 📌 PHẦN 11 — Cách Dùng Lucide React (Icon)
 
 ```jsx
-// Cách 1: Import từng icon cần dùng
-import { ChevronDown, Phone, Mail, MapPin, Star, Wifi, Coffee } from 'lucide-react'
+import { ChevronDown, Phone, Mail, MapPin, Star, Wifi, Coffee, AlertCircle, Check } from 'lucide-react'
 
-// Cách 2: Dùng trong JSX với size và strokeWidth
+// Size và strokeWidth
 <ChevronDown size={32} strokeWidth={1} />        // Icon to, nét mảnh
-<Phone size={20} strokeWidth={1.5} />            // Icon trung bình
-<Mail size={16} strokeWidth={2} />               // Icon nhỏ, nét bình thường
-
-// Thêm class Tailwind
-<Star size={20} className="text-yellow-500" />
-<Wifi size={16} className="text-gray-400" />
+<Phone size={20} strokeWidth={1.5} />
+<AlertCircle size={16} className="text-orange-500" />  // Dùng trong thông báo lỗi
+<Check size={12} />                              // Dùng trong step indicator
 
 // Icon trong nút
 <button className="flex items-center gap-2">
-  <Phone size={16} />
-  <span>Gọi điện</span>
+  <Check size={14} />
+  <span>Xác nhận</span>
 </button>
 ```
 
@@ -905,22 +979,17 @@ import { ChevronDown, Phone, Mail, MapPin, Star, Wifi, Coffee } from 'lucide-rea
 
 ---
 
-## 📌 PHẦN 9 — Pattern Hay Dùng Trong Dự Án
+## 📌 PHẦN 12 — Pattern Hay Dùng Trong Dự Án
 
 ### Pattern 1: Scroll vào section theo ID
-
 ```jsx
-// Trong button onClick:
 const scrollToSection = (id) => {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
-
-// Section phải có id:
 <section id="booking-section" className="py-16">
 ```
 
 ### Pattern 2: Fade-in khi scroll đến (Intersection Observer)
-
 ```jsx
 import { useEffect, useRef, useState } from 'react'
 
@@ -938,11 +1007,8 @@ function AnimatedSection({ children }) {
   }, [])
 
   return (
-    <div
-      ref={ref}
-      className={`transition-all duration-700 ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      }`}
+    <div ref={ref}
+      className={`transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
     >
       {children}
     </div>
@@ -951,25 +1017,31 @@ function AnimatedSection({ children }) {
 ```
 
 ### Pattern 3: Format tiền Việt
-
 ```jsx
-const formatPrice = (price) =>
-  new Intl.NumberFormat('vi-VN').format(price) + ' ₫'
-
-// Dùng:
-formatPrice(4800000)  // → "4.800.000 ₫"
+const fmt = (price) => new Intl.NumberFormat('vi-VN').format(price) + '₫'
+fmt(4800000)  // → "4.800.000₫"
 ```
 
-### Pattern 4: Modal Overlay
+### Pattern 4: Format ngày tiếng Việt
+```jsx
+const fmt = (dateStr) => {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  })
+}
+fmt('2026-07-15')  // → "15/07/2026"
+```
 
+### Pattern 5: Modal Overlay
 ```jsx
 {isOpen && (
   <div
-    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
     onClick={() => setIsOpen(false)}           // Click ngoài để đóng
   >
     <div
-      className="bg-white p-8 max-w-lg w-full mx-4"
+      className="bg-white p-8 max-w-lg w-full mx-4 rounded-2xl"
       onClick={e => e.stopPropagation()}        // Chặn sự kiện lan ra
     >
       Nội dung modal...
@@ -978,23 +1050,18 @@ formatPrice(4800000)  // → "4.800.000 ₫"
 )}
 ```
 
-### Pattern 5: Dark/light overlay cho ảnh nền
-
+### Pattern 6: Trigger side-effect sau khi state thay đổi
 ```jsx
-<div className="relative">
-  <img src="/images/photo.jpg" className="w-full h-96 object-cover" />
-  {/* Overlay gradient từ dưới lên */}
-  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-  {/* Nội dung chữ chồng lên */}
-  <div className="absolute bottom-6 left-6 text-white">
-    <h3 className="font-serif text-2xl">Tiêu đề</h3>
-  </div>
-</div>
+// Dùng useEffect thay vì gọi trực tiếp trong JSX (tránh lỗi re-render)
+useEffect(() => {
+  if (step === 3 && !bookingCode) handleConfirm()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [step])
 ```
 
 ---
 
-## 📌 PHẦN 10 — Lỗi Hay Gặp & Cách Sửa
+## 📌 PHẦN 13 — Lỗi Hay Gặp & Cách Sửa
 
 | Lỗi | Nguyên Nhân | Cách Sửa |
 |-----|-------------|----------|
@@ -1002,46 +1069,49 @@ formatPrice(4800000)  // → "4.800.000 ₫"
 | Tailwind class không hoạt động | Chưa thêm `tailwindcss()` trong `vite.config.js` | Thêm vào mảng `plugins[]` |
 | Ảnh không hiện (local) | Đường dẫn sai, có chữ `/public/` | Đổi thành `/images/...` |
 | Ảnh không hiện (Vercel) | Ảnh chưa được commit vào Git | Commit ảnh, hoặc dùng CDN |
-| Tên ảnh không khớp | Hoa/thường sai: `angelina_suite.jpg` vs `Angelina_Suite.jpg` | Viết đúng hoa/thường theo file thực tế |
+| Tên ảnh không khớp | Hoa/thường sai: `yoga.jpg` vs `Yoga.jpg` | Viết đúng hoa/thường theo file thực tế |
 | Video không phát trên mobile | Thiếu thuộc tính `playsInline` | Thêm `playsInline` vào thẻ `<video>` |
-| HMR lỗi "export is incompatible" | Export constant ngoài component trong file JSX | Tách data/constant sang file riêng hoặc đặt ngoài component |
-| "useBooking must be inside BookingProvider" | Dùng hook trước khi bọc Provider | Đảm bảo `<BookingProvider>` bọc ngoài cùng trong `App.jsx` |
-| Font không load | Link Google Fonts chưa trong `index.html` | Thêm `<link>` font vào phần `<head>` của `index.html` |
+| HMR lỗi "export is incompatible" | Export constant ngoài component trong file JSX | Tách data/constant sang file riêng |
+| "useBooking must be inside BookingProvider" | Dùng hook trước khi bọc Provider | Đảm bảo `<BookingProvider>` bọc ngoài cùng |
+| Font không load | Link Google Fonts chưa trong `index.html` | Thêm `<link>` font vào phần `<head>` |
+| EBUSY crash server trên Windows | Vite watch file tạm | Thêm `watch.ignored` vào `vite.config.js` |
+| Đặt phòng trùng lịch | Không gọi `checkConflict` trước `addBooking` | Luôn gọi `checkConflict` ở bước 2 modal |
 
 ---
 
-## 📌 PHẦN 11 — Quy Trình Làm Việc Hàng Ngày
+## 📌 PHẦN 14 — Quy Trình Làm Việc Hàng Ngày
 
 ```
 1. Mở terminal trong thư mục dự án
-2. npm run dev        → Bật dev server
-3. Mở VS Code
-4. Mở http://localhost:5173 trên trình duyệt
-5. Sửa code → Trình duyệt tự reload (HMR)
-6. git add . → git commit -m "mô tả" → git push
-7. Vercel tự deploy trong ~60 giây
+2. npm run dev           → Bật dev server tại http://localhost:5173
+3. Mở VS Code chỉnh sửa code
+4. Trình duyệt tự reload khi lưu file (HMR)
+5. git add .
+   git commit -m "mô tả ngắn gọn tính năng"
+   git push
+6. Vercel tự deploy trong ~60 giây
 ```
 
 ---
 
-## 📌 PHẦN 12 — Thứ Tự Tạo Component (Nên Theo)
+## 📌 PHẦN 15 — Thứ Tự Tạo Component (Nên Theo)
 
 Làm theo thứ tự này để tránh lỗi import chưa tồn tại:
 
 ```
-1. BookingContext.jsx   ← State toàn cục
-2. index.css           ← Style nền tảng
+1. BookingContext.jsx   ← State toàn cục (bao gồm checkConflict)
+2. index.css           ← Style nền tảng + @theme
 3. index.html          ← Font + SEO meta
-4. RoomCard.jsx        ← Có data rooms[]
+4. RoomCard.jsx        ← Có data rooms[] với maxGuests
 5. Hero.jsx            ← Section đơn giản nhất
 6. Header.jsx          ← Navbar
-7. BookingBar.jsx      ← Dùng useBooking()
+7. BookingBar.jsx      ← Dùng useBooking() → navigateToSearch
 8. Rooms.jsx           ← Dùng RoomCard
 9. Dining.jsx          ← Section độc lập
-10. Experiences.jsx    ← Section độc lập
+10. Experiences.jsx    ← Card với ảnh nền + hover mô tả
 11. Concept.jsx        ← Section độc lập
 12. Footer.jsx         ← Cuối cùng
-13. SearchResults.jsx  ← Dùng rooms[] và useBooking()
+13. SearchResults.jsx  ← Modal 3 bước + kiểm tra xung đột
 14. App.jsx            ← Lắp ghép tất cả lại
 ```
 
