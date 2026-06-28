@@ -49,6 +49,18 @@ export function BookingProvider({ children }) {
     return newBooking
   }, [])
 
+  // Kiểm tra xung đột lịch: cùng phòng, status active, ngày chồng lên nhau
+  const checkConflict = useCallback((roomId, checkIn, checkOut, bookings) => {
+    const newIn  = new Date(checkIn).getTime()
+    const newOut = new Date(checkOut).getTime()
+    return bookings.find(b =>
+      b.roomId === roomId &&
+      b.status === 'active' &&
+      newIn  < new Date(b.checkOut).getTime() &&
+      newOut > new Date(b.checkIn).getTime()
+    ) || null
+  }, [])
+
   const cancelBooking = useCallback((bookingId) => {
     setBookings((prev) => {
       const updated = prev.map((b) =>
@@ -61,7 +73,7 @@ export function BookingProvider({ children }) {
 
   return (
     <BookingContext.Provider
-      value={{ view, searchParams, bookings, navigateToSearch, navigateHome, addBooking, cancelBooking }}
+      value={{ view, searchParams, bookings, navigateToSearch, navigateHome, addBooking, cancelBooking, checkConflict }}
     >
       {children}
     </BookingContext.Provider>

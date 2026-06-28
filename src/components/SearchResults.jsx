@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ArrowLeft, Calendar, Users, Maximize2, Eye, Wifi, Coffee,
   Waves, Star, Check, X, Clock, ChevronDown, AlertCircle,
@@ -19,69 +19,125 @@ const calcNights = (checkIn, checkOut) =>
 
 
 
-// ─── Book Modal ────────────────────────────────────────────────────────────────
-function BookModal({ room, searchParams, onClose, onConfirm }) {
-  const nights = calcNights(searchParams.checkIn, searchParams.checkOut)
-  const total = room.price * nights
-  const [confirming, setConfirming] = useState(false)
-  const [done, setDone] = useState(false)
+// ─── Book Modal — 3-step flow ──────────────────────────────────────────────────
+function BookModal({ room, searchParams, onClose, onConfirm, bookings, checkConflict }) {
+  const nights  = calcNights(searchParams.checkIn, searchParams.checkOut)
+  const total   = room.price * nights
+  const [step, setStep] = useState(1)          // 1 | 2 | 3
+  const [loading, setLoading]   = useState(false)
+  const [bookingCode, setBookingCode] = useState('')
+  const [form, setForm] = useState({ name: '', email: '', phone: '', note: '' })
+  const [errors, setErrors] = useState({})
 
-  const handleConfirm = () => {
-    setConfirming(true)
-    setTimeout(() => {
-      onConfirm({
-        roomId: room.id,
-        roomName: room.name,
-        roomType: room.type,
-        checkIn: searchParams.checkIn,
-        checkOut: searchParams.checkOut,
-        guests: searchParams.guests,
-        pricePerNight: room.price,
-        nights,
-        total,
-      })
-      setConfirming(false)
-      setDone(true)
-    }, 1000)
+  // Validate bước 2
+  const validate = () => {
+    const e = {}
+    if (!form.name.trim())  e.name  = 'Vui lòng nhập họ tên'
+    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email không hợp lệ'
+    if (!form.phone.trim() || !/^[0-9]{9,11}$/.test(form.phone.replace(/\s/g, ''))) e.phone = 'Số điện thoại không hợp lệ'
+    setErrors(e)
+    return Object.keys(e).length === 0
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {done ? (
-          <div className="p-10 text-center">
-            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle size={32} className="text-green-600" />
-            </div>
-            <h3 className="font-serif text-2xl text-gray-900 mb-2">Đặt Phòng Thành Công!</h3>
-            <p className="text-gray-400 text-sm mb-6">Xác nhận đặt phòng đã được ghi lại. Kiểm tra mục "Quản lý đặt phòng" để xem chi tiết.</p>
-            <button
-              onClick={onClose}
-              className="w-full py-3 bg-ocean-800 text-white text-xs tracking-[0.3em] uppercase rounded-xl hover:bg-ocean-900 transition-colors"
-            >
-              Đóng
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Room preview */}
-            <div className="h-40 relative">
-              <img src={room.image} alt={room.name} className="w-full h-full object-cover" />
-              <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center">
-                <X size={14} />
-              </button>
-              <div className="absolute bottom-3 left-4 text-white">
-                <p className="text-[9px] tracking-widest uppercase text-white/60">Đặt phòng</p>
-                <p className="font-serif text-xl">{room.name}</p>
-              </div>
-            </div>
+  const [conflictError, setConflictError] = useState(null)
 
-            <div className="p-6">
-              {/* Summary */}
-              <div className="grid grid-cols-2 gap-3 mb-5 p-4 bg-sand-50 rounded-xl text-sm">
+  const handleStep2Next = () => {
+    if (!validate()) return
+    // Kiểm tra xung đột lịch trước khi qua bước 3
+    const conflict = checkConflict(room.id, searchParams.checkIn, searchParams.checkOut, bookings)
+    if (conflict) {
+      setConflictError(conflict)
+      return
+    }
+    setConflictError(null)
+    setStep(3)
+  }
+
+  // Trigger API call khi bước chuyển sang 3
+  useEffect(() => {
+    if (step === 3 && !bookingCode) handleConfirm()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+
+  const handleConfirm = () => {
+    setLoading(true)
+    setTimeout(() => {
+      const booking = onConfirm({
+        roomId: room.id, roomName: room.name,
+        checkIn: searchParams.checkIn, checkOut: searchParams.checkOut,
+        guests: searchParams.guests,
+        pricePerNight: room.price, nights, total,
+        guestName: form.name, guestEmail: form.email,
+        guestPhone: form.phone, note: form.note,
+      })
+      setBookingCode(booking?.id || `LNA-${Date.now()}`)
+      setLoading(false)
+    }, 1200)
+  }
+
+  // Khi có bookingCode → chuyển sang bước 3
+  if (bookingCode && step !== 3) setStep(3)
+
+  // ── Step labels ────────────────────────────────────────────────────────────
+  const steps = ['Tìm kiếm', 'Điền thông tin', 'Xác nhận']
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={step === 3 && bookingCode ? onClose : undefined}>
+      <div
+        className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* ── Header với ảnh phòng ── */}
+        <div className="h-36 relative flex-shrink-0">
+          <img src={room.image} alt={room.name} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />
+          <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+            <X size={14} />
+          </button>
+          <div className="absolute bottom-3 left-4 text-white">
+            <p className="text-[9px] tracking-widest uppercase text-white/60">Luna Nha Trang Retreat</p>
+            <p className="font-serif text-lg">{room.name}</p>
+          </div>
+        </div>
+
+        {/* ── Thanh tiến trình 3 bước ── */}
+        <div className="px-6 pt-5 pb-4 flex-shrink-0">
+          <div className="flex items-center">
+            {steps.map((label, i) => {
+              const num = i + 1
+              const active  = step === num
+              const done    = step > num
+              return (
+                <div key={label} className="flex items-center flex-1 last:flex-none">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300
+                      ${done  ? 'bg-ocean-800 text-white' : active ? 'bg-luxury-gold text-white' : 'bg-sand-100 text-gray-400'}`}>
+                      {done ? <Check size={12} /> : num}
+                    </div>
+                    <span className={`mt-1 text-[9px] tracking-wide uppercase whitespace-nowrap
+                      ${active ? 'text-luxury-gold font-medium' : done ? 'text-ocean-800' : 'text-gray-300'}`}>
+                      {label}
+                    </span>
+                  </div>
+                  {i < steps.length - 1 && (
+                    <div className={`h-px flex-1 mx-2 mb-4 transition-all duration-300 ${step > num ? 'bg-ocean-800' : 'bg-sand-200'}`} />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── Nội dung cuộn được ── */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+
+          {/* ━━━━ BƯỚC 1: Tóm tắt đặt phòng ━━━━ */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl text-gray-900 font-light">Xác nhận thông tin phòng</h3>
+
+              {/* Chi tiết ngày & khách */}
+              <div className="grid grid-cols-2 gap-3 p-4 bg-sand-50 rounded-xl text-sm">
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Nhận phòng</p>
                   <p className="font-medium text-gray-800">{fmt(searchParams.checkIn)}</p>
@@ -100,37 +156,174 @@ function BookModal({ room, searchParams, onClose, onConfirm }) {
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="flex items-center justify-between mb-5 pb-5 border-b border-sand-100">
+              {/* Tổng tiền */}
+              <div className="flex items-center justify-between p-4 border border-sand-200 rounded-xl">
                 <div>
-                  <p className="text-xs text-gray-400">{room.price.toLocaleString('vi-VN')}₫ × {nights} đêm</p>
+                  <p className="text-sm text-gray-500">{room.price.toLocaleString('vi-VN')}₫ × {nights} đêm</p>
+                  <p className="text-[10px] text-gray-400">Chưa bao gồm thuế & phí</p>
                 </div>
                 <div className="text-right">
                   <p className="font-serif text-2xl text-ocean-800">{total.toLocaleString('vi-VN')}₫</p>
-                  <p className="text-[10px] text-gray-400">Tổng cộng (chưa thuế)</p>
+                  <p className="text-[10px] text-gray-400">Tổng cộng</p>
                 </div>
               </div>
 
-              {/* Cancellation note */}
-              <div className="flex items-start gap-2 mb-5 p-3 bg-blue-50 rounded-lg">
-                <AlertCircle size={14} className="text-blue-500 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-blue-700">Huỷ miễn phí trong 48 giờ sau khi đặt. Sau đó áp dụng phí huỷ 1 đêm.</p>
+              {/* Chính sách hủy */}
+              <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-xl">
+                <AlertCircle size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-blue-600">Hủy miễn phí trong 48 giờ sau khi đặt. Sau đó áp dụng phí hủy 1 đêm.</p>
               </div>
 
               <button
-                onClick={handleConfirm}
-                disabled={confirming}
-                className="w-full py-4 bg-ocean-800 text-white text-xs tracking-[0.3em] uppercase font-medium rounded-xl hover:bg-ocean-900 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+                onClick={() => setStep(2)}
+                className="w-full py-3.5 bg-ocean-800 text-white text-xs tracking-[0.3em] uppercase font-medium rounded-xl hover:bg-ocean-900 transition-colors flex items-center justify-center gap-2"
               >
-                {confirming ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <><Check size={14} /> Xác Nhận Đặt Phòng</>
-                )}
+                Tiếp tục — Điền thông tin →
               </button>
             </div>
-          </>
-        )}
+          )}
+
+          {/* ━━━━ BƯỚC 2: Form thông tin khách hàng ━━━━ */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl text-gray-900 font-light">Thông tin khách hàng</h3>
+
+              {/* Họ & tên */}
+              <div>
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-400 mb-1.5">Họ và tên <span className="text-red-400">*</span></label>
+                <input
+                  type="text" value={form.name} placeholder="Nguyễn Văn A"
+                  onChange={e => { setForm(f => ({...f, name: e.target.value})); setErrors(er => ({...er, name: ''})) }}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm text-gray-800 outline-none transition-colors
+                    ${errors.name ? 'border-red-300 bg-red-50' : 'border-sand-200 focus:border-ocean-700 bg-white'}`}
+                />
+                {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-400 mb-1.5">Email <span className="text-red-400">*</span></label>
+                <input
+                  type="email" value={form.email} placeholder="email@example.com"
+                  onChange={e => { setForm(f => ({...f, email: e.target.value})); setErrors(er => ({...er, email: ''})) }}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm text-gray-800 outline-none transition-colors
+                    ${errors.email ? 'border-red-300 bg-red-50' : 'border-sand-200 focus:border-ocean-700 bg-white'}`}
+                />
+                {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
+              </div>
+
+              {/* Số điện thoại */}
+              <div>
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-400 mb-1.5">Số điện thoại <span className="text-red-400">*</span></label>
+                <input
+                  type="tel" value={form.phone} placeholder="0901234567"
+                  onChange={e => { setForm(f => ({...f, phone: e.target.value})); setErrors(er => ({...er, phone: ''})) }}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm text-gray-800 outline-none transition-colors
+                    ${errors.phone ? 'border-red-300 bg-red-50' : 'border-sand-200 focus:border-ocean-700 bg-white'}`}
+                />
+                {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
+              </div>
+
+              {/* Yêu cầu đặc biệt */}
+              <div>
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-gray-400 mb-1.5">Yêu cầu đặc biệt <span className="text-gray-300">(tùy chọn)</span></label>
+                <textarea
+                  rows={3} value={form.note} placeholder="Phòng tầng cao, giường đôi, hoa tươi chào đón, v.v."
+                  onChange={e => setForm(f => ({...f, note: e.target.value}))}
+                  className="w-full px-4 py-3 border border-sand-200 focus:border-ocean-700 rounded-xl text-sm text-gray-800 outline-none resize-none transition-colors"
+                />
+              </div>
+
+              {/* ── Thông báo xung đột lịch ── */}
+              {conflictError && (
+                <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                  <AlertCircle size={16} className="text-orange-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-orange-700 mb-0.5">Phòng đã được đặt trong khoảng thời gian này</p>
+                    <p className="text-xs text-orange-600">
+                      Đặt phòng <span className="font-semibold">{conflictError.id}</span> đang chiếm phòng từ{' '}
+                      <span className="font-semibold">{fmt(conflictError.checkIn)}</span> đến{' '}
+                      <span className="font-semibold">{fmt(conflictError.checkOut)}</span>.
+                      Vui lòng chọn ngày khác hoặc hủy đặt phòng hiện tại.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => setStep(1)}
+                  className="flex-1 py-3.5 border border-sand-200 text-gray-500 text-xs tracking-[0.2em] uppercase rounded-xl hover:border-gray-300 transition-colors"
+                >
+                  ← Quay lại
+                </button>
+                <button
+                  onClick={handleStep2Next}
+                  className="flex-[2] py-3.5 bg-ocean-800 text-white text-xs tracking-[0.3em] uppercase font-medium rounded-xl hover:bg-ocean-900 transition-colors"
+                >
+                  Xác nhận đặt phòng →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ━━━━ BƯỚC 3: Xác nhận thành công ━━━━ */}
+          {step === 3 && (
+            <div className="text-center py-4">
+              {!bookingCode ? (
+                /* Loading */
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <div className="w-12 h-12 border-2 border-sand-200 border-t-ocean-800 rounded-full animate-spin" />
+                  <p className="text-gray-400 text-sm">Đang xử lý đặt phòng của bạn...</p>
+                </div>
+              ) : (
+                /* Thành công */
+                <>
+                  <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle size={32} className="text-green-500" />
+                  </div>
+                  <h3 className="font-serif text-2xl text-gray-900 font-light mb-1">Đặt Phòng Thành Công!</h3>
+                  <p className="text-gray-400 text-sm mb-6">Cảm ơn {form.name}. Chúng tôi sẽ liên hệ qua {form.email} để xác nhận.</p>
+
+                  {/* Mã đặt phòng nổi bật */}
+                  <div className="bg-sand-50 border border-sand-200 rounded-2xl p-5 mb-5 text-left">
+                    <p className="text-[10px] tracking-[0.3em] uppercase text-gray-400 mb-2 text-center">Mã đặt phòng của bạn</p>
+                    <p className="font-mono text-2xl font-bold text-ocean-800 tracking-widest text-center mb-4">{bookingCode}</p>
+
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Hạng phòng</span>
+                        <span className="text-gray-800 font-medium">{room.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Nhận phòng</span>
+                        <span className="text-gray-800">{fmt(searchParams.checkIn)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Trả phòng</span>
+                        <span className="text-gray-800">{fmt(searchParams.checkOut)}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-sand-200 pt-2 mt-2">
+                        <span className="text-gray-500 font-medium">Tổng thanh toán</span>
+                        <span className="text-ocean-800 font-serif text-lg">{total.toLocaleString('vi-VN')}₫</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-400 mb-5">Vui lòng lưu lại mã đặt phòng để kiểm tra lịch sử tại mục Quản lý đặt phòng.</p>
+
+                  <button
+                    onClick={onClose}
+                    className="w-full py-3.5 bg-ocean-800 text-white text-xs tracking-[0.3em] uppercase rounded-xl hover:bg-ocean-900 transition-colors"
+                  >
+                    Hoàn tất — Xem danh sách đặt phòng
+                  </button>
+                </>
+              )}
+
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -413,7 +606,7 @@ function ModifySearch({ searchParams, onModify }) {
 
 // ─── Main SearchResults Page ───────────────────────────────────────────────────
 export default function SearchResults() {
-  const { searchParams, navigateHome, addBooking, navigateToSearch } = useBooking()
+  const { searchParams, navigateHome, addBooking, navigateToSearch, bookings, checkConflict } = useBooking()
   const [bookingRoom, setBookingRoom] = useState(null)
   const [justBooked, setJustBooked] = useState(null)
   const [localParams, setLocalParams] = useState(searchParams)
@@ -428,8 +621,12 @@ export default function SearchResults() {
   const handleBook = (room) => setBookingRoom(room)
 
   const handleConfirm = (bookingData) => {
+    // Bảo vệ lần cuối ở server-side: kiểm tra lại xung đột
+    const conflict = checkConflict(bookingData.roomId, bookingData.checkIn, bookingData.checkOut, bookings)
+    if (conflict) return null   // BookModal đã hiển thị lỗi ở bước 2 rồi
     const newBooking = addBooking(bookingData)
     setJustBooked(newBooking)
+    return newBooking
   }
 
   const handleModalClose = () => {
@@ -574,6 +771,8 @@ export default function SearchResults() {
           searchParams={localParams}
           onClose={handleModalClose}
           onConfirm={handleConfirm}
+          bookings={bookings}
+          checkConflict={checkConflict}
         />
       )}
     </div>
