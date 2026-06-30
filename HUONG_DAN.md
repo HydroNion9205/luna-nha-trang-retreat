@@ -1109,9 +1109,9 @@ Làm theo thứ tự này để tránh lỗi import chưa tồn tại:
 8. Rooms.jsx           ← Dùng RoomCard
 9. Dining.jsx          ← Section độc lập
 10. Experiences.jsx    ← Card với ảnh nền + hover mô tả
-11. Concept.jsx        ← Section độc lập
-12. Footer.jsx         ← Cuối cùng
-13. SearchResults.jsx  ← Modal 3 bước + kiểm tra xung đột
+11. Footer.jsx         ← Chân trang + MXH + WeatherWidget
+12. WeatherWidget.jsx  ← Widget thời tiết Nha Trang tương tác động
+13. SearchResults.jsx  ← Trang kết quả lọc, modal đặt phòng 3 bước & quản lý đơn đặt
 14. App.jsx            ← Lắp ghép tất cả lại
 ```
 

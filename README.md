@@ -33,6 +33,10 @@ Website Single Page Application (SPA) giới thiệu và hỗ trợ đặt phòn
 
 - 💾 **Hệ Thống Quản Lý Đặt Phòng Client-side** — Đặt phòng và Hủy phòng trực quan. Trạng thái đồng bộ tự động với `localStorage` (`luna_bookings`) giúp dữ liệu không bị mất khi làm mới trang (F5).
 
+- 🍔 **Header & Mega Menu Responsive** — Header đổi màu kính mờ khi scroll. Nút Hamburger mở Mega Menu 3 cột trên Desktop và cuộn dọc trên Mobile. Nút "Book Now" bo tròn tối ưu vị trí (nằm phải trên Mobile). Logo khách sạn ẩn hiện mượt mà cùng hiệu ứng trượt.
+
+- ⛅ **Footer Widget Thời Tiết & Liên Kết Thực** — Loại bỏ menu nhàm chán ở Footer, thay bằng Widget dự báo thời tiết 7 ngày tại Nha Trang. Có Timeline giờ trong ngày tương tác (highlight giờ hiện tại, hover sáng). Các liên kết MXH (Facebook, Instagram, YouTube) và Google Maps hiển thị sang trọng.
+
 - 🛠️ **Tối Ưu Hóa Development Server** — Cấu hình file watcher của Vite bỏ qua các tệp tạm nhằm loại bỏ lỗi crash server `EBUSY: resource busy or locked` trên Windows.
 
 ---
@@ -59,7 +63,7 @@ KhachSan/
 │   └── favicon.svg
 ├── src/
 │   ├── components/
-│   │   ├── Header.jsx         # Navbar sticky, hiệu ứng scroll mờ nền kính
+│   │   ├── Header.jsx         # Navbar sticky, Hamburger Mega Menu 3 cột & nút Book Now bo góc
 │   │   ├── Hero.jsx           # Banner 100vh với video nền động
 │   │   ├── BookingBar.jsx     # Khung nhập tham số tìm kiếm phòng nhanh
 │   │   ├── Concept.jsx        # Triết lý nghệ thuật — lưới ảnh không gian
@@ -67,7 +71,8 @@ KhachSan/
 │   │   ├── RoomCard.jsx       # Thẻ phòng chi tiết + Modal thông số + Data rooms[]
 │   │   ├── Dining.jsx         # Fine Dining La Mer + Modal thực đơn chi tiết
 │   │   ├── Experiences.jsx    # Grid 6 hoạt động, ảnh làm nền, hover hiện mô tả
-│   │   ├── Footer.jsx         # Chân trang + Form đăng ký Newsletter
+│   │   ├── Footer.jsx         # Chân trang + MXH + WeatherWidget
+│   │   ├── WeatherWidget.jsx  # Widget thời tiết Nha Trang tương tác động
 │   │   └── SearchResults.jsx  # Trang kết quả lọc, modal đặt phòng 3 bước & quản lý đơn đặt
 │   ├── context/
 │   │   └── BookingContext.jsx # State toàn cục: view, searchParams, bookings, checkConflict
