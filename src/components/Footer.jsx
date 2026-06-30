@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Mail, Phone, MapPin, Send, Check } from 'lucide-react'
+import WeatherWidget from './WeatherWidget'
 
 
 const IconFacebook = ({ size = 16 }) => (
@@ -112,9 +113,9 @@ export default function Footer() {
 
       {/* Main Footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Brand Column */}
-          <div className="max-w-sm">
+          <div>
             <div className="mb-6">
               <div className="font-serif text-3xl font-light text-white tracking-widest">LUNA</div>
               <div className="text-luxury-gold text-[9px] tracking-[0.4em] uppercase mt-1">Nha Trang Retreat</div>
@@ -165,6 +166,14 @@ export default function Footer() {
                 </a>
               ))}
             </div>
+          </div>
+
+          {/* Weather Widget Column */}
+          <div className="border border-white/10 rounded-2xl p-6 bg-white/3">
+            <p className="text-[9px] tracking-[0.4em] uppercase text-luxury-gold mb-5">
+              🌤 Thời Tiết · Nha Trang
+            </p>
+            <WeatherWidget />
           </div>
 
         </div>
