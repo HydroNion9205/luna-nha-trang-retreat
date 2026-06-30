@@ -30,11 +30,6 @@ const IconMap = ({ size = 16 }) => (
   </svg>
 )
 
-const footerLinks = {
-  'Khách Sạn': ['Giới Thiệu', 'Phòng & Suite', 'Ẩm Thực', 'Trải Nghiệm', 'Hội Nghị & Sự Kiện'],
-  'Thông Tin': ['Chính Sách Đặt Phòng', 'Chính Sách Hủy Phòng', 'Điều Khoản Dịch Vụ', 'Bảo Mật Thông Tin', 'Trợ Giúp & FAQ'],
-  'Liên Kết': ['Tuyển Dụng', 'Đối Tác Du Lịch', 'Báo Chí & Media', 'Chương Trình Thành Viên'],
-}
 
 export default function Footer() {
   const [email, setEmail] = useState('')
@@ -117,9 +112,9 @@ export default function Footer() {
 
       {/* Main Footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10">
+        <div className="grid grid-cols-1 gap-10">
           {/* Brand Column */}
-          <div className="lg:col-span-2">
+          <div className="max-w-sm">
             <div className="mb-6">
               <div className="font-serif text-3xl font-light text-white tracking-widest">LUNA</div>
               <div className="text-luxury-gold text-[9px] tracking-[0.4em] uppercase mt-1">Nha Trang Retreat</div>
@@ -172,21 +167,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Link Columns */}
-          {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title}>
-              <h4 className="text-white text-xs tracking-[0.3em] uppercase font-medium mb-5">{title}</h4>
-              <ul className="space-y-3">
-                {links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-white/35 hover:text-white text-sm transition-colors font-light">
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
         </div>
       </div>
 
