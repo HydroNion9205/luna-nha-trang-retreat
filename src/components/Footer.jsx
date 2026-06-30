@@ -23,6 +23,13 @@ const IconYoutube = ({ size = 16 }) => (
   </svg>
 )
 
+const IconMap = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+)
+
 const footerLinks = {
   'Khách Sạn': ['Giới Thiệu', 'Phòng & Suite', 'Ẩm Thực', 'Trải Nghiệm', 'Hội Nghị & Sự Kiện'],
   'Thông Tin': ['Chính Sách Đặt Phòng', 'Chính Sách Hủy Phòng', 'Điều Khoản Dịch Vụ', 'Bảo Mật Thông Tin', 'Trợ Giúp & FAQ'],
@@ -132,23 +139,31 @@ export default function Footer() {
                 <Mail size={14} className="text-ocean-500 group-hover:text-ocean-400 flex-shrink-0" />
                 hello@lunanhatrang.vn
               </a>
-              <div className="flex items-start gap-3 text-white/40 text-sm">
-                <MapPin size={14} className="text-ocean-500 mt-0.5 flex-shrink-0" />
+              <a
+                href="https://maps.app.goo.gl/pZtuayjqhBhWh2om8"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-3 text-white/40 hover:text-white text-sm transition-colors group"
+              >
+                <MapPin size={14} className="text-ocean-500 group-hover:text-ocean-400 mt-0.5 flex-shrink-0" />
                 <span>Đường Trần Phú, Vĩnh Nguyên,<br />Nha Trang, Khánh Hòa 650000</span>
-              </div>
+              </a>
             </div>
 
             {/* Social */}
             <div className="flex gap-3 mt-6">
               {[
-                { icon: <IconInstagram size={16} />, label: 'Instagram', href: '#' },
-                { icon: <IconFacebook size={16} />, label: 'Facebook', href: '#' },
-                { icon: <IconYoutube size={16} />, label: 'YouTube', href: '#' },
+                { icon: <IconFacebook size={16} />, label: 'Facebook',  href: 'https://www.facebook.com/TraVinhUniversity.TVU' },
+                { icon: <IconInstagram size={16} />, label: 'Instagram', href: 'https://www.instagram.com/travinhuniversity/' },
+                { icon: <IconYoutube size={16} />,  label: 'YouTube',   href: 'https://www.youtube.com/@DaihocTraVinhTVU' },
+                { icon: <IconMap size={16} />,      label: 'Google Maps', href: 'https://maps.app.goo.gl/pZtuayjqhBhWh2om8' },
               ].map((social) => (
                 <a
                   key={social.label}
                   href={social.href}
                   aria-label={social.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-9 h-9 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/40 hover:bg-ocean-700 hover:border-ocean-600 hover:text-white transition-all duration-300"
                 >
                   {social.icon}
