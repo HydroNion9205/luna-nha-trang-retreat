@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 
 // ─── SVG Weather Icons ────────────────────────────────────────────────────────
 const IconSun = ({ size = 28, className = '' }) => (
@@ -142,16 +142,15 @@ const weatherData = [
 const hourLabels = ['00:00','03:00','06:00','09:00','12:00','15:00','18:00','21:00']
 
 // ─── Icon nhỏ dùng trong timeline ─────────────────────────────────────────────
-function HourIcon({ type, size = 18 }) {
-  const cls = 'text-white/40'
-  if (type === 'sunny')   return <IconSun size={size} className={cls} />
-  if (type === 'cloudy')  return <IconCloud size={size} className={cls} />
-  if (type === 'partly')  return <IconPartlyCloudy size={size} className={cls} />
-  if (type === 'rain')    return <IconRain size={size} className={cls} />
+function HourIcon({ type, size = 18, className = 'text-white/40' }) {
+  if (type === 'sunny')   return <IconSun size={size} className={className} />
+  if (type === 'cloudy')  return <IconCloud size={size} className={className} />
+  if (type === 'partly')  return <IconPartlyCloudy size={size} className={className} />
+  if (type === 'rain')    return <IconRain size={size} className={className} />
   // night
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className={cls}>
+      strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
   )
@@ -168,8 +167,15 @@ function MainIcon({ type }) {
 
 // ─── Main Widget ───────────────────────────────────────────────────────────────
 export default function WeatherWidget() {
-  const [selected, setSelected] = useState(0)
+  const [selected, setSelected]     = useState(0)
+  const [hoveredHour, setHoveredHour] = useState(null)
   const w = weatherData[selected]
+
+  // Tính khung giờ hiện tại (3h/slot): 0→00-02, 1→03-05, 2→06-08 ...
+  const currentHourSlot = useMemo(() => {
+    const h = new Date().getHours()
+    return Math.floor(h / 3)
+  }, [])
 
   // Ngày hiện tại
   const now = new Date()
@@ -258,19 +264,64 @@ export default function WeatherWidget() {
       </div>
 
       {/* Hourly Timeline */}
-      <div className="border-t border-white/10 pt-4">
-        <div className="flex justify-between items-end">
-          {w.hours.map((type, i) => (
-            <div key={i} className="flex flex-col items-center gap-1.5">
-              <HourIcon type={type} size={16} />
-              <span className="text-[9px] text-white/20 tracking-wide">{hourLabels[i].slice(0,2)}</span>
-            </div>
-          ))}
+      <div className="border-t border-white/10 pt-5">
+        <div className="flex justify-between items-end gap-1">
+          {w.hours.map((type, i) => {
+            const isCurrent = selected === 0 && i === currentHourSlot
+            const isHovered = hoveredHour === i
+            const isActive  = isCurrent || isHovered
+
+            return (
+              <div
+                key={i}
+                className="flex flex-col items-center gap-1.5 cursor-default flex-1"
+                onMouseEnter={() => setHoveredHour(i)}
+                onMouseLeave={() => setHoveredHour(null)}
+              >
+                {/* Icon — phóng to + phát sáng khi active */}
+                <div
+                  className="transition-all duration-300 flex items-center justify-center"
+                  style={{
+                    transform:  isActive ? 'scale(1.5)' : 'scale(1)',
+                    filter:     isActive ? 'drop-shadow(0 0 6px rgba(255,255,255,0.7))' : 'none',
+                    marginBottom: isActive ? '4px' : '0px',
+                  }}
+                >
+                  <HourIcon
+                    type={type}
+                    size={16}
+                    className={isActive ? 'text-white' : 'text-white/30'}
+                  />
+                </div>
+
+                {/* Đường gạch chân — chỉ hiện khi active */}
+                <div
+                  className="transition-all duration-300 rounded-full"
+                  style={{
+                    width:   isActive ? '16px' : '0px',
+                    height:  '1.5px',
+                    background: isActive ? 'rgba(255,255,255,0.7)' : 'transparent',
+                  }}
+                />
+
+                {/* Giờ — luôn chiếm chỗ, chỉ hiện khi active */}
+                <span
+                  className="text-[9px] tracking-wide transition-all duration-200"
+                  style={{
+                    opacity: isActive ? 1 : 0,
+                    color: isCurrent ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)',
+                  }}
+                >
+                  {hourLabels[i]}
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
 
       {/* Source note */}
-      <p className="text-[9px] text-white/15 text-right mt-3 tracking-wide">
+      <p className="text-[9px] text-white/15 text-right mt-4 tracking-wide">
         Thời tiết · Nha Trang, Khánh Hòa
       </p>
     </div>
