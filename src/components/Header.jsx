@@ -94,17 +94,6 @@ export default function Header() {
               {mobileOpen ? <X size={22} /> : <IconHamburger />}
             </button>
 
-            {/* Book Now (Mobile only) - bên trái */}
-            <button
-              onClick={() => handleNavClick('#booking-section')}
-              className={`md:hidden px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-medium transition-all duration-300 ${
-                isScrolled
-                  ? 'bg-ocean-700 text-white hover:bg-ocean-800'
-                  : 'bg-white/20 text-white border border-white/50 hover:bg-white hover:text-ocean-900'
-              }`}
-            >
-              Book Now
-            </button>
 
             {/* Logo — tên khách sạn ẩn khi ở Hero, hiện khi scroll ra */}
             <a
@@ -159,32 +148,34 @@ export default function Header() {
           </nav>
 
           {/* ── Right: Social icons + Book Now ── */}
-          <div className="hidden md:flex items-center gap-4">
-            {/* 3 social icons */}
-            {[
-              { icon: <IconFacebook />,  label: 'Facebook',    href: 'https://www.facebook.com/TraVinhUniversity.TVU' },
-              { icon: <IconInstagram />, label: 'Instagram',   href: 'https://www.instagram.com/travinhuniversity/' },
-              { icon: <IconMapPin />,    label: 'Google Maps', href: 'https://maps.app.goo.gl/pZtuayjqhBhWh2om8' },
-            ].map((s) => (
-              <a
-                key={s.label}
-                href={s.href}
-                aria-label={s.label}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`transition-colors duration-300 ${iconColor} ${iconHover}`}
-              >
-                {s.icon}
-              </a>
-            ))}
+          <div className="flex items-center gap-4">
+            {/* 3 social icons (Desktop only) */}
+            <div className="hidden md:flex items-center gap-4">
+              {[
+                { icon: <IconFacebook />,  label: 'Facebook',    href: 'https://www.facebook.com/TraVinhUniversity.TVU' },
+                { icon: <IconInstagram />, label: 'Instagram',   href: 'https://www.instagram.com/travinhuniversity/' },
+                { icon: <IconMapPin />,    label: 'Google Maps', href: 'https://maps.app.goo.gl/pZtuayjqhBhWh2om8' },
+              ].map((s) => (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  aria-label={s.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`transition-colors duration-300 ${iconColor} ${iconHover}`}
+                >
+                  {s.icon}
+                </a>
+              ))}
 
-            {/* Divider */}
-            <div className={`w-px h-5 ${isScrolled ? 'bg-sand-200' : 'bg-white/20'}`} />
+              {/* Divider */}
+              <div className={`w-px h-5 ${isScrolled ? 'bg-sand-200' : 'bg-white/20'}`} />
+            </div>
 
-            {/* Book Now — bo góc */}
+            {/* Book Now — bo góc (hiện trên cả Mobile và Desktop) */}
             <button
               onClick={() => handleNavClick('#booking-section')}
-              className={`px-6 py-2.5 rounded-full text-xs tracking-widest uppercase font-medium transition-all duration-300 ${
+              className={`px-4 md:px-6 py-1.5 md:py-2.5 rounded-full text-[10px] md:text-xs tracking-widest uppercase font-medium transition-all duration-300 ${
                 isScrolled
                   ? 'bg-ocean-700 text-white hover:bg-ocean-800 shadow-md hover:shadow-lg'
                   : 'bg-white/20 text-white border border-white/50 hover:bg-white hover:text-ocean-900 backdrop-blur-sm'
