@@ -94,6 +94,18 @@ export default function Header() {
               {mobileOpen ? <X size={22} /> : <IconHamburger />}
             </button>
 
+            {/* Book Now (Mobile only) - bên trái */}
+            <button
+              onClick={() => handleNavClick('#booking-section')}
+              className={`md:hidden px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-medium transition-all duration-300 ${
+                isScrolled
+                  ? 'bg-ocean-700 text-white hover:bg-ocean-800'
+                  : 'bg-white/20 text-white border border-white/50 hover:bg-white hover:text-ocean-900'
+              }`}
+            >
+              Book Now
+            </button>
+
             {/* Logo — tên khách sạn ẩn khi ở Hero, hiện khi scroll ra */}
             <a
               href="#"
@@ -212,12 +224,6 @@ export default function Header() {
             </button>
           ))}
 
-          <button
-            onClick={() => handleNavClick('#booking-section')}
-            className="w-full mt-2 py-3 bg-ocean-700 text-white text-xs tracking-widest uppercase font-medium rounded-full hover:bg-ocean-800 transition-colors"
-          >
-            Đặt Phòng Ngay
-          </button>
 
           {/* Social icons trong mobile menu */}
           <div className="flex items-center gap-5 pt-2">

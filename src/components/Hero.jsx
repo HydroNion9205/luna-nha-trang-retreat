@@ -80,27 +80,6 @@ export default function Hero() {
           Trải nghiệm kỳ nghỉ hoàn hảo nhất tại vịnh Nha Trang.
         </p>
 
-        {/* CTA Buttons — "Đặt Phòng Ngay" scrolls to BookingBar below hero */}
-        <div className={`flex flex-col sm:flex-row gap-4 mb-12 transition-all duration-1000 delay-500
-                         ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          <button
-            onClick={scrollToBooking}
-            className="px-10 py-4 bg-white text-ocean-900 text-xs tracking-[0.3em] uppercase font-medium
-                       hover:bg-ocean-50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5 cursor-pointer"
-          >
-            Đặt Phòng Ngay
-          </button>
-          <button
-            onClick={() => {
-              const el = document.querySelector('#rooms')
-              if (el) el.scrollIntoView({ behavior: 'smooth' })
-            }}
-            className="px-10 py-4 border border-white/50 text-white text-xs tracking-[0.3em] uppercase font-light
-                       hover:bg-white/10 transition-all duration-300 cursor-pointer"
-          >
-            Khám Phá Phòng
-          </button>
-        </div>
 
         {/* Stats — fully inside the dark night sky */}
         <div className={`grid grid-cols-3 gap-8 sm:gap-20 transition-all duration-1000 delay-600
