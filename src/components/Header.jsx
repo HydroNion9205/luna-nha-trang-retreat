@@ -100,25 +100,30 @@ export default function Header() {
               onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className="flex flex-col leading-none"
             >
-              {/* "LUNA" — luôn hiển thị */}
+              {/* "LUNA" — ẩn khi ở hero, sổ xuống khi scroll ra */}
               <span
-                className={`font-serif text-2xl font-light tracking-widest transition-colors duration-300 ${
+                className={`font-serif text-2xl font-light tracking-widest transition-all duration-500 overflow-hidden block ${
                   isScrolled ? 'text-ocean-900' : 'text-white'
+                } ${
+                  pastHero
+                    ? 'max-h-12 opacity-100 translate-y-0'
+                    : 'max-h-0 opacity-0 -translate-y-1'
                 }`}
+                style={{ transition: 'max-height 0.4s ease, opacity 0.4s ease, transform 0.4s ease' }}
               >
                 LUNA
               </span>
 
               {/* "Nha Trang Retreat" — ẩn khi ở hero, sổ xuống khi scroll ra */}
               <span
-                className={`text-[9px] tracking-[0.3em] uppercase font-light transition-all duration-500 overflow-hidden ${
+                className={`text-[9px] tracking-[0.3em] uppercase font-light transition-all duration-500 overflow-hidden block ${
                   isScrolled ? 'text-luxury-gold' : 'text-ocean-200'
                 } ${
                   pastHero
                     ? 'max-h-6 opacity-100 translate-y-0'
                     : 'max-h-0 opacity-0 -translate-y-1'
                 }`}
-                style={{ display: 'block', transition: 'max-height 0.4s ease, opacity 0.4s ease, transform 0.4s ease' }}
+                style={{ transition: 'max-height 0.45s ease, opacity 0.45s ease, transform 0.45s ease' }}
               >
                 Nha Trang Retreat
               </span>
