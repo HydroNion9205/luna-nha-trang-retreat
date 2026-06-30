@@ -34,50 +34,92 @@ const IconMapPin = () => (
   </svg>
 )
 
-// ─── Nav Links ────────────────────────────────────────────────────────────────
-const navLinks = [
+// ─── Desktop Fast-Scroll Links (trên Header) ──────────────────────────────────
+const fastLinks = [
   { label: 'Phòng & Suite',  href: '#rooms' },
   { label: 'Ẩm Thực',        href: '#dining' },
   { label: 'Trải Nghiệm',    href: '#experiences' },
   { label: 'Về Chúng Tôi',   href: '#concept' },
 ]
 
+// ─── Mega Menu Dropdown Data ──────────────────────────────────────────────────
+const menuSections = [
+  {
+    title: 'KHÁCH SẠN',
+    links: [
+      { label: 'Giới Thiệu',         href: '#concept' },
+      { label: 'Phòng & Suite',      href: '#rooms' },
+      { label: 'Ẩm Thực',            href: '#dining' },
+      { label: 'Trải Nghiệm',        href: '#experiences' },
+      { label: 'Hội Nghị & Sự Kiện', href: '#events' },
+    ]
+  },
+  {
+    title: 'THÔNG TIN',
+    links: [
+      { label: 'Chính Sách Đặt Phòng', href: '#booking-policy' },
+      { label: 'Chính Sách Hủy Phòng', href: '#cancel-policy' },
+      { label: 'Điều Khoản Dịch Vụ',   href: '#terms' },
+      { label: 'Bảo Mật Thông Tin',    href: '#privacy' },
+      { label: 'Trợ Giúp & FAQ',       href: '#faq' },
+    ]
+  },
+  {
+    title: 'LIÊN KẾT',
+    links: [
+      { label: 'Tuyển Dụng',              href: '#careers' },
+      { label: 'Đối Tác Du Lịch',         href: '#partners' },
+      { label: 'Báo Chí & Media',         href: '#media' },
+      { label: 'Chương Trình Thành Viên', href: '#membership' },
+    ]
+  }
+]
+
 // Hero height: trang Hero chiếm 100vh
 const HERO_HEIGHT = () => window.innerHeight
 
 export default function Header() {
-  const [isScrolled, setIsScrolled]   = useState(false)
-  const [pastHero,   setPastHero]     = useState(false)   // đã scroll qua hero?
-  const [mobileOpen, setMobileOpen]   = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [pastHero, setPastHero]     = useState(false)
+  const [menuOpen, setMenuOpen]     = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
       const y = window.scrollY
       setIsScrolled(y > 60)
-      setPastHero(y > HERO_HEIGHT() * 0.85)   // 85% chiều cao hero
+      setPastHero(y > HERO_HEIGHT() * 0.85)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const handleNavClick = (href) => {
-    setMobileOpen(false)
-    const el = document.querySelector(href)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setMenuOpen(false)
+    if (href.startsWith('#')) {
+      const el = document.querySelector(href)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 
+  // Nếu menu đang mở, ta ép Header sang theme tối (giống giao diện menu dropdown) để tạo khối liền mạch
+  // Hoặc ta vẫn giữ theme cuộn. Ở đây chọn giữ theme cuộn của Header.
+  const headerSolid  = isScrolled || menuOpen
+  const isDarkTheme  = menuOpen || !isScrolled
+
   // ── Màu text theo ngữ cảnh ─────────────────────────────────────────────────
-  const textColor    = isScrolled ? 'text-gray-700'     : 'text-white/90'
-  const textHover    = isScrolled ? 'hover:text-ocean-700' : 'hover:text-white'
-  const iconColor    = isScrolled ? 'text-gray-500'     : 'text-white/70'
-  const iconHover    = isScrolled ? 'hover:text-ocean-700' : 'hover:text-white'
+  const textColor = isDarkTheme ? 'text-white/90' : 'text-gray-700'
+  const textHover = isDarkTheme ? 'hover:text-white' : 'hover:text-ocean-700'
+  const iconColor = isDarkTheme ? 'text-white/70' : 'text-gray-500'
+  const iconHover = isDarkTheme ? 'hover:text-white' : 'hover:text-ocean-700'
 
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-sand-100'
-          : 'bg-transparent'
+        menuOpen
+          ? 'bg-[#0a0f18] border-b border-white/10' // Màu tối khi mở menu
+          : isScrolled
+            ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-sand-100'
+            : 'bg-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -87,26 +129,25 @@ export default function Header() {
           <div className="flex items-center gap-4">
             {/* Hamburger menu icon */}
             <button
-              onClick={() => setMobileOpen(!mobileOpen)}
+              onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Menu"
               className={`transition-colors duration-300 ${textColor} ${textHover}`}
             >
-              {mobileOpen ? <X size={22} /> : <IconHamburger />}
+              {menuOpen ? <X size={22} /> : <IconHamburger />}
             </button>
-
 
             {/* Logo — tên khách sạn ẩn khi ở Hero, hiện khi scroll ra */}
             <a
               href="#"
-              onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); setMenuOpen(false); }}
               className="flex flex-col leading-none"
             >
-              {/* "LUNA" — ẩn khi ở hero, sổ xuống khi scroll ra */}
+              {/* "LUNA" */}
               <span
                 className={`font-serif text-2xl font-light tracking-widest transition-all duration-500 overflow-hidden block ${
-                  isScrolled ? 'text-ocean-900' : 'text-white'
+                  isDarkTheme ? 'text-white' : 'text-ocean-900'
                 } ${
-                  pastHero
+                  pastHero || menuOpen
                     ? 'max-h-12 opacity-100 translate-y-0'
                     : 'max-h-0 opacity-0 -translate-y-1'
                 }`}
@@ -115,12 +156,12 @@ export default function Header() {
                 LUNA
               </span>
 
-              {/* "Nha Trang Retreat" — ẩn khi ở hero, sổ xuống khi scroll ra */}
+              {/* "Nha Trang Retreat" */}
               <span
                 className={`text-[9px] tracking-[0.3em] uppercase font-light transition-all duration-500 overflow-hidden block ${
-                  isScrolled ? 'text-luxury-gold' : 'text-ocean-200'
+                  isDarkTheme ? 'text-ocean-200' : 'text-luxury-gold'
                 } ${
-                  pastHero
+                  pastHero || menuOpen
                     ? 'max-h-6 opacity-100 translate-y-0'
                     : 'max-h-0 opacity-0 -translate-y-1'
                 }`}
@@ -131,9 +172,14 @@ export default function Header() {
             </a>
           </div>
 
-          {/* ── Center: Desktop Nav ── */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
+          {/* ── Center: Desktop Fast-Scroll Nav ── */}
+          {/* Sẽ ẩn đi khi menuOpen = true */}
+          <nav
+            className={`hidden md:flex items-center gap-8 transition-all duration-300 ${
+              menuOpen ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
+            }`}
+          >
+            {fastLinks.map((link) => (
               <button
                 key={link.href}
                 onClick={() => handleNavClick(link.href)}
@@ -141,7 +187,7 @@ export default function Header() {
               >
                 {link.label}
                 <span className={`absolute -bottom-1 left-0 w-0 h-px transition-all duration-300 group-hover:w-full ${
-                  isScrolled ? 'bg-ocean-600' : 'bg-white'
+                  isDarkTheme ? 'bg-white' : 'bg-ocean-600'
                 }`} />
               </button>
             ))}
@@ -149,8 +195,12 @@ export default function Header() {
 
           {/* ── Right: Social icons + Book Now ── */}
           <div className="flex items-center gap-4">
-            {/* 3 social icons (Desktop only) */}
-            <div className="hidden md:flex items-center gap-4">
+            {/* 3 social icons (Desktop only) - Ẩn khi menuOpen = true */}
+            <div
+              className={`hidden md:flex items-center gap-4 transition-all duration-300 ${
+                menuOpen ? 'opacity-0 pointer-events-none translate-x-4' : 'opacity-100 translate-x-0'
+              }`}
+            >
               {[
                 { icon: <IconFacebook />,  label: 'Facebook',    href: 'https://www.facebook.com/TraVinhUniversity.TVU' },
                 { icon: <IconInstagram />, label: 'Instagram',   href: 'https://www.instagram.com/travinhuniversity/' },
@@ -169,71 +219,75 @@ export default function Header() {
               ))}
 
               {/* Divider */}
-              <div className={`w-px h-5 ${isScrolled ? 'bg-sand-200' : 'bg-white/20'}`} />
+              <div className={`w-px h-5 ${isDarkTheme ? 'bg-white/20' : 'bg-sand-200'}`} />
             </div>
 
-            {/* Book Now — bo góc (hiện trên cả Mobile và Desktop) */}
+            {/* Book Now — bo góc (Luôn hiển thị) */}
             <button
               onClick={() => handleNavClick('#booking-section')}
               className={`px-4 md:px-6 py-1.5 md:py-2.5 rounded-full text-[10px] md:text-xs tracking-widest uppercase font-medium transition-all duration-300 ${
-                isScrolled
-                  ? 'bg-ocean-700 text-white hover:bg-ocean-800 shadow-md hover:shadow-lg'
-                  : 'bg-white/20 text-white border border-white/50 hover:bg-white hover:text-ocean-900 backdrop-blur-sm'
+                isDarkTheme
+                  ? 'bg-white/20 text-white border border-white/50 hover:bg-white hover:text-ocean-900 backdrop-blur-sm'
+                  : 'bg-ocean-700 text-white hover:bg-ocean-800 shadow-md hover:shadow-lg'
               }`}
             >
               Book Now
             </button>
           </div>
 
-          {/* ── Mobile: chỉ hiện hamburger (đã tích hợp trên) ── */}
-          {/* Hamburger mobile riêng (md:hidden) — ẩn desktop */}
         </div>
       </div>
 
-      {/* ── Mobile / Hamburger Menu Dropdown ── */}
+      {/* ── Mega Menu Dropdown ── */}
       <div
-        className={`transition-all duration-400 overflow-hidden ${
-          mobileOpen ? 'max-h-[32rem] opacity-100' : 'max-h-0 opacity-0'
+        className={`absolute top-20 left-0 right-0 w-full transition-all duration-500 overflow-hidden ${
+          menuOpen ? 'max-h-[85vh] opacity-100 pointer-events-auto' : 'max-h-0 opacity-0 pointer-events-none'
         }`}
       >
-        <div className={`backdrop-blur-xl border-t px-6 py-6 space-y-4 ${
-          isScrolled
-            ? 'bg-white/98 border-sand-100'
-            : 'bg-gray-950/80 border-white/10'
-        }`}>
-          {navLinks.map((link) => (
-            <button
-              key={link.href}
-              onClick={() => handleNavClick(link.href)}
-              className={`block w-full text-left text-sm tracking-widest uppercase font-light py-2 border-b transition-colors ${
-                isScrolled
-                  ? 'text-gray-700 hover:text-ocean-700 border-sand-100'
-                  : 'text-white/80 hover:text-white border-white/10'
-              }`}
-            >
-              {link.label}
-            </button>
-          ))}
+        <div className="bg-[#0a0f18] text-white border-t border-white/10 shadow-2xl h-full pb-12 pt-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-y-auto max-h-[calc(85vh-20px)] scrollbar-thin scrollbar-thumb-white/10">
+            {/* Desktop: 3 cột ngang | Mobile: 3 phần dọc */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+              {menuSections.map(section => (
+                <div key={section.title} className="flex flex-col gap-5">
+                  <h3 className="text-[13px] tracking-[0.25em] font-medium uppercase text-white/90">
+                    {section.title}
+                  </h3>
+                  <div className="flex flex-col gap-3.5">
+                    {section.links.map(link => (
+                      <a
+                        key={link.label}
+                        href={link.href}
+                        onClick={(e) => { e.preventDefault(); handleNavClick(link.href) }}
+                        className="text-[15px] font-light text-white/50 hover:text-white transition-colors block w-fit"
+                      >
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-
-          {/* Social icons trong mobile menu */}
-          <div className="flex items-center gap-5 pt-2">
-            {[
-              { icon: <IconFacebook />,  label: 'Facebook',    href: 'https://www.facebook.com/TraVinhUniversity.TVU' },
-              { icon: <IconInstagram />, label: 'Instagram',   href: 'https://www.instagram.com/travinhuniversity/' },
-              { icon: <IconMapPin />,    label: 'Google Maps', href: 'https://maps.app.goo.gl/pZtuayjqhBhWh2om8' },
-            ].map((s) => (
-              <a
-                key={s.label}
-                href={s.href}
-                aria-label={s.label}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`transition-colors ${isScrolled ? 'text-gray-400 hover:text-ocean-700' : 'text-white/50 hover:text-white'}`}
-              >
-                {s.icon}
-              </a>
-            ))}
+            {/* Thêm Social Icons trên Mobile cho menu */}
+            <div className="mt-12 pt-8 border-t border-white/10 flex md:hidden items-center gap-6">
+              {[
+                { icon: <IconFacebook />,  label: 'Facebook',    href: 'https://www.facebook.com/TraVinhUniversity.TVU' },
+                { icon: <IconInstagram />, label: 'Instagram',   href: 'https://www.instagram.com/travinhuniversity/' },
+                { icon: <IconMapPin />,    label: 'Google Maps', href: 'https://maps.app.goo.gl/pZtuayjqhBhWh2om8' },
+              ].map((s) => (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  aria-label={s.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/40 hover:text-white transition-colors"
+                >
+                  {s.icon}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </div>
